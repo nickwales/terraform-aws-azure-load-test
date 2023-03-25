@@ -1,12 +1,3 @@
-
-### Configure Azure CLI
-```
-doormat az login --subscription <sub_id>
-doormat az export --subscription <sub_id>
-
-export ARM_MSI_ENDPOINT=http://127.0.0.1:9000/azure/nwales@hashicorp.com-developer-7f60b297-f17e-4dcc-998a-4ca95806c542/metadata/identity/oauth2/token && export MSI_ENDPOINT=http://127.0.0.1:9000/azure/nwales@hashicorp.com-developer-7f60b297-f17e-4dcc-998a-4ca95806c542/metadata/identity/oauth2/token && export ARM_USE_MSI=true && ARM_SUBSCRIPTION_ID=7f60b297-f17e-4dcc-998a-4ca95806c542 && ARM_TENANT_ID=f5662df6-dc40-4331-bbd5-550bc91adef4
-```
-
 ### Configure Kube Config File
 
 ```
