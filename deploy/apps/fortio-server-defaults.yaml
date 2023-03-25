@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name:   fortio-server-defaults
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name:   fortio-server-defaults
+spec:
+  selector:
+    app:   fortio-server-defaults
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app:   fortio-server-defaults
+  name:   fortio-server-defaults
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app:   fortio-server-defaults
+  template:
+    metadata:
+      annotations:
+        'consul.hashicorp.com/connect-inject': 'true'
+        'consul.hashicorp.com/transparent-proxy': 'true'
+       # 'consul.hashicorp.com/sidecar-proxy-cpu-limit': '2m' # 0.002% of a CPU
+        'consul.hashicorp.com/sidecar-proxy-cpu-request': '2m'
+        # 'consul.hashicorp.com/sidecar-proxy-memory-limit': '50Mi'
+        # 'consul.hashicorp.com/sidecar-proxy-memory-request': '26Mi'
+      labels:
+        app:   fortio-server-defaults
+    spec:
+      containers:
+      - name:   fortio-server-defaults
+        image: fortio/fortio:latest_release
+        env:       
+        ports:
+        - containerPort: 8080
+          name: http-fortio
+        - containerPort: 8079
+          name: grpc-ping        
+      serviceAccountName:   fortio-server-defaults
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name:   fortio-server-defaults
+spec:
+  destination:
+    name:   fortio-server-defaults
+  sources:
+    - name: fortio-client
+      action: allow      
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceDefaults
+metadata:
+  name:   fortio-server-defaults
+spec:
+  protocol: http

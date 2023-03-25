@@ -1,0 +1,52 @@
+global:
+  name: consul
+  datacenter: dc1
+  image: hashicorp/consul:1.13.6
+  gossipEncryption:
+    autoGenerate: true
+  tls:
+    enabled: true
+    httpsOnly: false
+    enableAutoEncrypt: true
+    verify: true
+  acls:
+    manageSystemACLs: true
+    createReplicationToken: true
+  metrics:
+    enabled: true
+connectInject:
+  enabled: true
+  metrics:
+    defaultEnabled: true # by default, this inherits from the value global.metrics.enabled
+    defaultEnableMerging: true  
+server:
+  replicas: 3
+  exposeGossipAndRPCPorts: true
+  ports:
+    serflan:
+      port: 9301
+client:
+  exposeGossipPorts: true  
+ui:
+ enabled: true
+ service:
+  enabled: true
+  type: LoadBalancer
+  metrics:
+    enabled: true
+    provider: "prometheus"
+    baseURL: http://prometheus-server.default.svc.cluster.local
+dns:
+ enabled: true
+ingressGateways:
+ enabled: true
+ replicas: 1
+ gateways:
+ - name: ingress-gateway
+   service:
+    type: LoadBalancer
+    ports: 
+    - port: 8080
+    - port: 8081
+controller:
+  enabled: true    

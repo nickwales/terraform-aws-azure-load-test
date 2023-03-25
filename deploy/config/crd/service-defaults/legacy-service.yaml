@@ -1,0 +1,7 @@
+# Required for the ingress gateway
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceDefaults
+metadata:
+  name: legacy-service
+spec:
+  protocol: http
