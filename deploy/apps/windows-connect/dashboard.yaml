@@ -1,0 +1,232 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dashboard
+  namespace: consul
+automountServiceAccountToken: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+  namespace: consul
+  labels:
+    app: dashboard
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9002
+    targetPort: 9002
+  selector:
+    app: dashboard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: dashboard
+  name: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dashboard
+  template:
+    metadata:
+      annotations:
+        consul.hashicorp.com/connect-inject: 'true'
+        consul.hashicorp.com/connect-inject-status: injected
+        consul.hashicorp.com/connect-k8s-version: v1.0.0
+        consul.hashicorp.com/connect-service-port: "9002"
+        consul.hashicorp.com/connect-service-upstreams: 'counting:9001'        
+        consul.hashicorp.com/transparent-proxy-status: disabled        
+      labels:
+        app: dashboard
+        consul.hashicorp.com/connect-inject-managed-by: consul-k8s-endpoints-controller
+        consul.hashicorp.com/connect-inject-status: injected
+      namespace: consul  
+    spec:
+      containers:
+      - name: dashboard
+        # Windows Dashboard service image:
+        image: hashicorp/dashboard-service:windows
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9002
+          protocol: TCP
+        env:
+        - name: COUNTING_SERVICE_URL
+          value: "http://localhost:9001"  
+        resources: {}
+      - args:
+          [
+          "-addresses",
+          # DNS addresses are resolved differently in Windows nodes. Instead of consul-server.consul.svc you should use just consul-server.
+          "consul-server",
+          #"consul-server.consul.svc",
+          "-grpc-port=8502",
+          # Id path should be a valid Windows path.
+          "-proxy-service-id-path=C:\\consul\\connect-inject\\proxyid",
+          "-log-level=info",
+          "-log-json=false",
+          "-envoy-concurrency=2",
+          "-tls-disabled",
+          "-telemetry-prom-scrape-path=/metrics",
+          "-consul-dns-bind-port=8600",
+          ]
+        env:
+        - name: TMPDIR
+          # Valid Windows path
+          value: "C:\\consul\\connect-inject"
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: DP_SERVICE_NODE_NAME
+          value: $(NODE_NAME)-virtual
+        # Windows consul-dataplane image:  
+        image: hashicorppreview/consul-dataplane:1.0.0-alpha1-windows
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 1
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: 20000
+          timeoutSeconds: 1
+        name: consul-dataplane
+        readinessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 1
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: 20000
+          timeoutSeconds: 1
+        resources: {}
+        # securityContext is not supported on Windows.
+        # Valid Windows paths for terminationMessage.
+        terminationMessagePath: "C:\\dev\\termination-log"
+        terminationMessagePolicy: File
+        volumeMounts:
+        # Valid Windows path for volume mountPaths
+        - mountPath: "C:\\consul\\connect-inject"
+          name: consul-connect-inject-data       
+      dnsConfig:
+        # nameservers:
+        # - 127.0.0.1
+        # - 10.100.0.10
+        options:
+        - name: ndots
+          value: "5"
+        searches:
+        - consul.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
+        - us-east-2.compute.internal
+      # dnsPolicy: None
+      enableServiceLinks: true
+      initContainers:
+      - command:
+      # Our Windows consul-k8s-control-plane image uses Git Bash as a default Shell.
+      # To use sh interpreter just use sh instead of /bin/sh
+        - sh
+        - -ec
+        - |-
+          consul-k8s-control-plane.exe connect-init -pod-name=${POD_NAME} -pod-namespace=${POD_NAMESPACE} \
+            -log-level=info \
+            -log-json=false \
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: CONSUL_ADDRESSES
+          value: consul-server
+        - name: CONSUL_GRPC_PORT
+          value: "8502"
+        - name: CONSUL_HTTP_PORT
+          value: "8500"
+        - name: CONSUL_API_TIMEOUT
+          value: 5s
+        - name: CONSUL_NODE_NAME
+          value: $(NODE_NAME)-virtual
+        - name: CONSUL_REDIRECT_TRAFFIC_CONFIG
+          # To disable IP Tables, just pass an empty string as value for this env variable.
+          value: ""
+        # Windows consul-k8s-control-plane image:  
+        image: hashicorppreview/consul-k8s-control-plane:1.0.0-alpha1-windows
+        imagePullPolicy: IfNotPresent
+        name: consul-connect-inject-init
+        resources:
+        # On Windows we need to allocate more resources:
+          limits:
+            cpu: 100m
+            memory: 300Mi
+          requests:
+            cpu: 100m
+            memory: 50Mi
+        # Valid Windows paths for terminationMessage.
+        terminationMessagePath: "C:\\dev\\termination-log"
+        terminationMessagePolicy: File
+        volumeMounts:
+        # Valid Windows path for volume mountPaths
+        - mountPath: "C:\\consul\\connect-inject"
+          name: consul-connect-inject-data              
+      nodeSelector:
+        kubernetes.io/os: windows
+      preemptionPolicy: PreemptLowerPriority
+      priority: 0
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: dashboard
+      serviceAccountName: dashboard
+      # Termination grace period and tolarations values were incremented
+      # While deploying we encountered timeout issues.
+      # These values were generated by trial and error.
+      terminationGracePeriodSeconds: 600
+      tolerations:
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 3000
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 3000
+      volumes:
+      - name: kube-api-access-f6lmh
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
+      - emptyDir:
+          medium: Memory
+        name: consul-connect-inject-data      
