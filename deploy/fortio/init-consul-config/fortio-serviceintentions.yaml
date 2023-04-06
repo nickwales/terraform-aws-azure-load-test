@@ -1,0 +1,56 @@
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name: fortio-client
+spec:
+  destination:
+    name: fortio-client
+  sources:
+    - name: ingress-gateway
+      action: allow
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name:   fortio-server-defaults
+spec:
+  destination:
+    name:   fortio-server-defaults
+  sources:
+    - name: fortio-client
+      action: allow
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name:   fortio-server-large
+spec:
+  destination:
+    name:   fortio-server-large
+  sources:
+    - name: fortio-client
+      action: allow
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name:   fortio-server-medium
+spec:
+  destination:
+    name:   fortio-server-medium
+  sources:
+    - name: fortio-client
+      action: allow
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name:   fortio-server-small
+spec:
+  destination:
+    name:   fortio-server-small
+  sources:
+    - name: fortio-client
+      action: allow
+    - name: frontend
+      action: allow

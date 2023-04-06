@@ -1,0 +1,52 @@
+---
+global:
+  scrape_interval:  5s
+  scrape_timeout: 3s
+server:
+  podAnnotations:
+    "consul.hashicorp.com/connect-inject": "false"
+  readinessProbeInitialDelay: 0
+  securityContext:
+    runAsUser: 65534
+    runAsNonRoot: true
+    runAsGroup: 655
+  persistentVolume:
+    enabled: false
+  nodeSelector: 
+    nodetype: default
+alertmanager:
+  enabled: false
+  nodeSelector: 
+    nodetype: default
+nodeExporter:
+  podAnnotations:
+    "consul.hashicorp.com/connect-inject": "false"
+  # nodeSelector: 
+  #   nodetype: default
+pushgateway:
+  podAnnotations:
+    "consul.hashicorp.com/connect-inject": "false"
+  nodeSelector: 
+    nodetype: default
+kube-state-metrics:
+  podAnnotations:
+    "consul.hashicorp.com/connect-inject": "false"
+  nodeSelector: 
+    nodetype: default
+serviceAccounts:
+  alertmanager:
+    create: true
+    name:
+    annotations: {}
+  nodeExporter:
+    create: true
+    name:
+    annotations: {}
+  pushgateway:
+    create: true
+    name:
+    annotations: {}
+  server:
+    create: true
+    name:
+    annotations: {}
