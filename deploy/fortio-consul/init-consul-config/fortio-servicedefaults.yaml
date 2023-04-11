@@ -4,14 +4,14 @@ kind: ServiceDefaults
 metadata:
   name: fortio-client
 spec:
-  protocol: http
+  protocol: grpc
 ---
 apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceDefaults
 metadata:
   name:   fortio-server-defaults
 spec:
-  protocol: http
+  protocol: grpc
 ---
 apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceDefaults

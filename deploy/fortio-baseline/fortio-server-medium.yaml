@@ -11,8 +11,12 @@ spec:
   selector:
     app:   fortio-server-medium
   ports:
-  - port: 8080
+  - name: http
+    port: 8080
     targetPort: 8080
+  - name: grpc
+    port: 8079
+    targetPort: 8079
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -28,12 +32,6 @@ spec:
   template:
     metadata:
       annotations:
-        'consul.hashicorp.com/connect-inject': 'true'
-        'consul.hashicorp.com/transparent-proxy': 'true'
-        'consul.hashicorp.com/sidecar-proxy-cpu-limit': '350m' # 35% of a CPU
-        'consul.hashicorp.com/sidecar-proxy-cpu-request': '350m'
-        'consul.hashicorp.com/sidecar-proxy-memory-limit': '75Mi'
-        'consul.hashicorp.com/sidecar-proxy-memory-request': '75Mi'        
       labels:
         app:   fortio-server-medium
     spec:

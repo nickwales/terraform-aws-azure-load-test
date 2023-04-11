@@ -11,8 +11,12 @@ spec:
   selector:
     app:   fortio-server-small
   ports:
-  - port: 8080
+  - name: http
+    port: 8080
     targetPort: 8080
+  - name: grpc
+    port: 8079
+    targetPort: 8079
 ---
 apiVersion: apps/v1
 kind: Deployment

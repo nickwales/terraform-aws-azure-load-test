@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: multitool
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: multitool
+spec:
+  selector:
+    app: multitool
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: multitool
+  name: multitool
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: multitool
+  template:
+    metadata:
+      annotations:
+        'consul.hashicorp.com/connect-inject': 'true'
+        'consul.hashicorp.com/transparent-proxy': 'true'
+      labels:
+        app: multitool
+    spec:
+      containers:
+      - image: praqma/network-multitool
+        name: multitool
+        env:
+      serviceAccountName: multitool
+      nodeSelector:
+        nodetype: services
+
