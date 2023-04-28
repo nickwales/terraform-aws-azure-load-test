@@ -17,6 +17,8 @@ podAnnotations:
 service:
   enabled: true
   type: LoadBalancer
+  annotations:
+      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
   port: 3000
   targetPort: 3000
 
@@ -28,9 +30,13 @@ datasources:
       - name: Prometheus
         type: prometheus
         orgId: 1
-        url: http://prometheus-server.default.svc.cluster.local
+        url: http://prometheus-server.metrics.svc.cluster.local
         access: proxy
         isDefault: true
         jsonData:
           timeInterval: 5s
         editable: true
+dashboards:
+  default:
+    local-dashboard:
+      url: https://https://raw.githubusercontent.com/ppresto/terraform-aws-azure-load-test/patrick/deploy/grafana/k8s-views-consul-mesh.json

@@ -25,7 +25,7 @@ nameOverride: ""
 fullnameOverride: ""
 
 # Add your consul server details here
-consulServer: "https://consul-server:8501"
+consulServer: "consul-server:8500"
 
 # Flags - for a list visit https://github.com/prometheus/consul_exporter#flags
 #options: {}
@@ -89,9 +89,9 @@ affinity: {}
 
 # Extra environment variables
 #extraEnv: []
-extraEnv:
-  - name: "CONSUL_HTTP_TOKEN"
-    value: "b0ad4b62-a958-038c-a716-f21f78d96526"
+# extraEnv:
+#   - name: "CONSUL_HTTP_TOKEN"
+#     value: "b0ad4b62-a958-038c-a716-f21f78d96526"
 
 # Annotations for the pods
 podAnnotations: {}

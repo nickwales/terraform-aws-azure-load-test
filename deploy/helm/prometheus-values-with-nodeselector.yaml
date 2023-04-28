@@ -1,7 +1,9 @@
 ---
 global:
-  scrape_interval:  5s
-  scrape_timeout: 3s
+  scrape_interval:  1s
+  scrape_timeout: 2s
+prometheusSpec:
+  overrideHonorLabels: true
 server:
   podAnnotations:
     "consul.hashicorp.com/connect-inject": "false"
@@ -13,26 +15,24 @@ server:
   persistentVolume:
     enabled: false
   nodeSelector: 
-    nodetype: default
+    nodegroup: default
 alertmanager:
   enabled: false
   nodeSelector: 
-    nodetype: default
+    nodegroup: default
 nodeExporter:
   podAnnotations:
     "consul.hashicorp.com/connect-inject": "false"
-  # nodeSelector: 
-  #   nodetype: default
 pushgateway:
   podAnnotations:
     "consul.hashicorp.com/connect-inject": "false"
   nodeSelector: 
-    nodetype: default
+    nodegroup: default
 kube-state-metrics:
   podAnnotations:
     "consul.hashicorp.com/connect-inject": "false"
   nodeSelector: 
-    nodetype: default
+    nodegroup: default
 serviceAccounts:
   alertmanager:
     create: true

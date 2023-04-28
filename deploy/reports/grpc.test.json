@@ -1,0 +1,104 @@
+22:09:51 I scli.go:88> Starting Φορτίο 1.54.1 h1:M3RALr1cWye+NfGDcYxUCubP5Oo95kzLN+FSOJSXCik= go1.20.3 amd64 linux
+Fortio 1.54.1 running at 8 queries per second, 2->2 procs, for 5s: fortio-server-defaults-grpc:8079
+22:09:51 I grpcrunner.go:160> Starting GRPC Ping Delay=250ms PayloadLength=11 test for fortio-server-defaults-grpc:8079 with 4*2 threads at 8.0 qps
+22:09:51 I grpcrunner.go:333> Extracted dial options: [0xc0000ae3c8]
+Starting at 8 qps with 8 thread(s) [gomax 2] for 5s : 5 calls each (total 40)
+22:09:58 I periodic.go:830> T002 ended after 5.25366746s : 5 calls. qps=0.9517161179440162
+22:09:58 I periodic.go:830> T005 ended after 5.253667467s : 5 calls. qps=0.9517161166759472
+22:09:58 I periodic.go:830> T007 ended after 5.253695235s : 5 calls. qps=0.9517110864539898
+22:09:58 I periodic.go:830> T004 ended after 5.253706095s : 5 calls. qps=0.9517091191603858
+22:09:58 I periodic.go:830> T006 ended after 5.253721235s : 5 calls. qps=0.9517063765565399
+22:09:58 I periodic.go:830> T000 ended after 5.253998269s : 5 calls. qps=0.9516561947691041
+22:09:58 I periodic.go:830> T003 ended after 5.254136988s : 5 calls. qps=0.9516310692735216
+22:09:58 I periodic.go:830> T001 ended after 5.254155418s : 5 calls. qps=0.9516277312373937
+Ended after 5.254220243s : 40 calls. qps=7.6129
+Sleep times : count 32 avg 0.99642517 +/- 0.0001462 min 0.996171326 max 0.996598912 sum 31.8856054
+Aggregated Function Time : count 40 avg 0.25291745 +/- 0.0001593 min 0.252647566 max 0.253262932 sum 10.1166981
+# range, mid point, percentile, count
+>= 0.252648 <= 0.253263 , 0.252955 , 100.00, 40
+# target 50% 0.252947
+# target 75% 0.253105
+# target 90% 0.2532
+# target 99% 0.253257
+# target 99.9% 0.253262
+Error cases : no data
+Jitter: false
+Ping SERVING : 40
+All done 40 calls (plus 2 warmup) 252.917 ms avg, 7.6 qps
+{
+  "RunType": "GRPC Ping Delay=250ms PayloadLength=11",
+  "Labels": "fortio-server-defaults-grpc:8079 , fortio-client-6b78f9c56c-wdzs4",
+  "StartTime": "2023-04-13T22:09:53.085257206Z",
+  "RequestedQPS": "8",
+  "RequestedDuration": "5s",
+  "ActualQPS": 7.6129279227094635,
+  "ActualDuration": 5254220243,
+  "NumThreads": 8,
+  "Version": "1.54.1",
+  "DurationHistogram": {
+    "Count": 40,
+    "Min": 0.252647566,
+    "Max": 0.253262932,
+    "Sum": 10.116698141,
+    "Avg": 0.252917453525,
+    "StdDev": 0.00015933921451047905,
+    "Data": [
+      {
+        "Start": 0.252647566,
+        "End": 0.253262932,
+        "Percent": 100,
+        "Count": 40
+      }
+    ],
+    "Percentiles": [
+      {
+        "Percentile": 50,
+        "Value": 0.2529473596923077
+      },
+      {
+        "Percentile": 75,
+        "Value": 0.25310514584615385
+      },
+      {
+        "Percentile": 90,
+        "Value": 0.25319981753846155
+      },
+      {
+        "Percentile": 99,
+        "Value": 0.2532566205538461
+      },
+      {
+        "Percentile": 99.9,
+        "Value": 0.2532623008553846
+      }
+    ]
+  },
+  "ErrorsDurationHistogram": {
+    "Count": 0,
+    "Min": 0,
+    "Max": 0,
+    "Sum": 0,
+    "Avg": 0,
+    "StdDev": 0,
+    "Data": null
+  },
+  "Exactly": 0,
+  "Jitter": false,
+  "Uniform": false,
+  "NoCatchUp": false,
+  "RunID": 0,
+  "AccessLoggerInfo": "",
+  "ID": "2023-04-13-220951_fortio_server_defaults_grpc_8079_fortio_client_6b78f9c56c_wdzs4",
+  "RetCodes": {
+    "SERVING": 40
+  },
+  "Destination": "fortio-server-defaults-grpc:8079",
+  "Streams": 4,
+  "Ping": true,
+  "Metadata": {
+    "user-agent": [
+      "fortio.org/fortio-1.54.1"
+    ]
+  }
+}
+Successfully wrote 1654 bytes of Json data to stdout

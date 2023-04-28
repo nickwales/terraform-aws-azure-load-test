@@ -39,5 +39,5 @@ spec:
         env:
       serviceAccountName: multitool
       nodeSelector:
-        nodetype: services
+        nodegroup: services
 

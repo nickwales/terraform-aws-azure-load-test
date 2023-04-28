@@ -2,7 +2,6 @@ apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceIntentions
 metadata:
   name: fortio-client
-  namespace: fortio-consul
 spec:
   destination:
     name: fortio-client
@@ -14,7 +13,6 @@ apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceIntentions
 metadata:
   name:   fortio-server-defaults
-  namespace: fortio-consul
 spec:
   destination:
     name:   fortio-server-defaults
@@ -26,7 +24,6 @@ apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceIntentions
 metadata:
   name:   fortio-server-defaults-grpc
-  namespace: fortio-consul
 spec:
   destination:
     name:   fortio-server-defaults-grpc
@@ -38,7 +35,6 @@ apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceIntentions
 metadata:
   name:   fortio-server-large
-  namespace: fortio-consul
 spec:
   destination:
     name:   fortio-server-large
@@ -50,7 +46,6 @@ apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceIntentions
 metadata:
   name:   fortio-server-medium
-  namespace: fortio-consul
 spec:
   destination:
     name:   fortio-server-medium
@@ -62,7 +57,6 @@ apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceIntentions
 metadata:
   name:   fortio-server-small
-  namespace: fortio-consul
 spec:
   destination:
     name:   fortio-server-small

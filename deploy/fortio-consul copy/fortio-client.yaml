@@ -2,13 +2,11 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: fortio-client
-  namespace: fortio-consul
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: fortio-client
-  namespace: fortio-consul
 spec:
   selector:
     app: fortio-client
@@ -19,7 +17,6 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: fortio-consul
   labels:
     app: fortio-client
   name: fortio-client
@@ -30,7 +27,6 @@ spec:
       app: fortio-client
   template:
     metadata:
-      namespace: fortio-consul
       annotations:
         'consul.hashicorp.com/connect-inject': 'true'
         'consul.hashicorp.com/transparent-proxy': 'true'

@@ -2,11 +2,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name:   fortio-server-small
+  namespace: fortio-consul
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name:   fortio-server-small
+  namespace: fortio-consul
 spec:
   selector:
     app:   fortio-server-small
@@ -21,6 +23,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: fortio-consul
   labels:
     app:   fortio-server-small
   name:   fortio-server-small
@@ -31,6 +34,7 @@ spec:
       app:   fortio-server-small
   template:
     metadata:
+      namespace: fortio-consul
       annotations:
         'consul.hashicorp.com/connect-inject': 'true'
         'consul.hashicorp.com/transparent-proxy': 'true'
@@ -52,4 +56,4 @@ spec:
           name: grpc-ping        
       serviceAccountName:   fortio-server-small
       nodeSelector:
-        nodetype: services
+        nodegroup: services

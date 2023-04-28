@@ -32,6 +32,12 @@ spec:
   template:
     metadata:
       annotations:
+        'consul.hashicorp.com/connect-inject': 'true'
+        'consul.hashicorp.com/transparent-proxy': 'true'
+        'consul.hashicorp.com/sidecar-proxy-cpu-limit': '150m' # 35% of a CPU
+        'consul.hashicorp.com/sidecar-proxy-cpu-request': '150m'
+        'consul.hashicorp.com/sidecar-proxy-memory-limit': '75Mi'
+        'consul.hashicorp.com/sidecar-proxy-memory-request': '75Mi'        
       labels:
         app:   fortio-server-small
     spec:
@@ -46,4 +52,4 @@ spec:
           name: grpc-ping        
       serviceAccountName:   fortio-server-small
       nodeSelector:
-        nodetype: services
+        nodegroup: services

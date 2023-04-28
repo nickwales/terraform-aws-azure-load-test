@@ -2,7 +2,6 @@ apiVersion: consul.hashicorp.com/v1alpha1
 kind: IngressGateway
 metadata:
   name: ingress-gateway
-  namespace: fortio-consul
 spec:
   listeners:
     - port: 8080
