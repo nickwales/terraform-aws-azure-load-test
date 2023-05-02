@@ -72,8 +72,9 @@ kubectl exec -it deploy/fortio-client -- fortio load -a -grpc -ping -grpc-ping-d
 ```
 
 HTTP
+* `-json -` write json output to stdout
 ```
-kubectl exec -it deploy/fortio-client -- fortio load -qps 1000 -c 32 -r .0001 -t 300s -labels "http test" http://fortio-server-defaults:8080/echo
+kubectl -n fortio-baseline exec -it deploy/fortio-client -- fortio load -qps 1000 -c 32 -r .0001 -t 300s -labels "http test" -json - http://fortio-server-defaults:8080/echo
 ```
 
 TCP

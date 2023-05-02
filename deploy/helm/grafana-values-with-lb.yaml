@@ -36,7 +36,23 @@ datasources:
         jsonData:
           timeInterval: 5s
         editable: true
+dashboardProviders:
+ dashboardproviders.yaml:
+   apiVersion: 1
+   providers:
+   - name: 'default'
+     orgId: 1
+     folder: ''
+     type: file
+     disableDeletion: false
+     editable: true
+     options:
+       path: /var/lib/grafana/dashboards/default
 dashboards:
   default:
-    local-dashboard:
-      url: https://https://raw.githubusercontent.com/ppresto/terraform-aws-azure-load-test/patrick/deploy/grafana/k8s-views-consul-mesh.json
+    local-dashboard-k8sglobal:
+      url: https://raw.githubusercontent.com/ppresto/terraform-aws-azure-load-test/patrick/deploy/grafana/k8s-views-global.json
+    local-dashboard-k8snamespaces:
+      url: https://raw.githubusercontent.com/ppresto/terraform-aws-azure-load-test/patrick/deploy/grafana/k8s-views-namespaces.json
+    local-dashboard-k8sconsul:
+      url: https://raw.githubusercontent.com/ppresto/terraform-aws-azure-load-test/patrick/deploy/grafana/k8s-views-consul-mesh.json

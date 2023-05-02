@@ -7,7 +7,11 @@ deploy() {
     kubectl create namespace fortio-consul
     kubectl apply -f ${SCRIPT_DIR}/init-consul-config
     kubectl apply -f ${SCRIPT_DIR}/.
-
+    echo
+    echo "Waiting for fortio client pod to be ready..."
+    echo
+    kubectl -n fortio-consul wait --for=condition=ready pod -l app=fortio-client
+    echo
     echo 
     echo "grafana"
     echo "http://$(kubectl -n metrics get svc -l app.kubernetes.io/name=grafana -o json | jq -r '.items[].status.loadBalancer.ingress[].hostname'):3000"

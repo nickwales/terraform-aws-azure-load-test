@@ -34,6 +34,10 @@ spec:
       annotations:
         'consul.hashicorp.com/connect-inject': 'true'
         'consul.hashicorp.com/transparent-proxy': 'true'
+        'consul.hashicorp.com/sidecar-proxy-cpu-limit': '500m' # 35% of a CPU
+        'consul.hashicorp.com/sidecar-proxy-cpu-request': '200m'
+        'consul.hashicorp.com/sidecar-proxy-memory-limit': '100Mi'
+        'consul.hashicorp.com/sidecar-proxy-memory-request': '100Mi'
       labels:
         app: fortio-client
     spec:
