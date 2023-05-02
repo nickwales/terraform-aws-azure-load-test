@@ -445,6 +445,7 @@
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "hide": false,
           "interval": "$resolution",
           "legendFormat": "Real",
           "range": true,
@@ -456,7 +457,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(kube_pod_container_resource_requests{namespace=~\"$namespace\", unit=\"core\"})",
+          "expr": "sum(kube_pod_container_resource_requests{exported_namespace=~\"$namespace\", unit=\"core\"})",
           "hide": false,
           "interval": "",
           "legendFormat": "Requests",
@@ -469,7 +470,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(kube_pod_container_resource_limits{namespace=~\"$namespace\", unit=\"core\"})",
+          "expr": "sum(kube_pod_container_resource_limits{exported_namespace=~\"$namespace\", unit=\"core\"})",
           "hide": false,
           "legendFormat": "Limits",
           "range": true,
@@ -556,7 +557,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(kube_pod_container_resource_requests{namespace=~\"$namespace\", unit=\"byte\"})",
+          "expr": "sum(kube_pod_container_resource_requests{exported_namespace=~\"$namespace\", unit=\"byte\"})",
           "hide": false,
           "legendFormat": "Requests",
           "range": true,
@@ -568,7 +569,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(kube_pod_container_resource_limits{namespace=~\"$namespace\", unit=\"byte\"})",
+          "expr": "sum(kube_pod_container_resource_limits{exported_namespace=~\"$namespace\", unit=\"byte\"})",
           "hide": false,
           "legendFormat": "Limits",
           "range": true,
@@ -697,7 +698,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", image!=\"\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", image!=\"\"}[$__rate_interval])) by (pod)",
           "interval": "$resolution",
           "legendFormat": "{{ pod }}",
           "range": true,
@@ -781,7 +782,7 @@
           "placement": "right",
           "showLegend": true,
           "sortBy": "Last *",
-          "sortDesc": false
+          "sortDesc": true
         },
         "tooltip": {
           "mode": "single",
@@ -1528,7 +1529,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1577,7 +1579,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "5s",
+  "refresh": "30s",
   "revision": 1,
   "schemaVersion": 38,
   "style": "dark",
@@ -1609,10 +1611,10 @@
         "current": {
           "selected": true,
           "text": [
-            "All"
+            "fortio-consul"
           ],
           "value": [
-            "$__all"
+            "fortio-consul"
           ]
         },
         "datasource": {
@@ -1641,8 +1643,8 @@
       {
         "current": {
           "selected": true,
-          "text": "1s",
-          "value": "1s"
+          "text": "3m",
+          "value": "3m"
         },
         "hide": 0,
         "includeAll": false,
@@ -1650,7 +1652,7 @@
         "name": "resolution",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "1s",
             "value": "1s"
           },
@@ -1670,7 +1672,7 @@
             "value": "1m"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "3m",
             "value": "3m"
           },
@@ -1695,6 +1697,6 @@
   "timezone": "",
   "title": "Kubernetes / Views / Namespaces",
   "uid": "k8s_views_ns",
-  "version": 2,
+  "version": 1,
   "weekStart": ""
 }

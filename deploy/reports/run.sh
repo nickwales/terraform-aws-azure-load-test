@@ -38,14 +38,23 @@ consul_grpc() {
     echo "http://localhost:8080/fortio"
 }
 
-if [[ -z $1 ]]; then
+if [[ -z $2 ]]; then
     echo "Using Default Run Time : ${SECONDS}s"
     SECONDS=10
 else
-    echo "Setting Run Time Seconds = ${1}s"
-    SECONDS=${1}
+    echo "Setting Run Time Seconds = ${2}s"
+    SECONDS=${2}
+fi
+
+if [[ -z $1 ]]; then
+    echo "Running Default HTTP Test Case: consul_http"
+    consul_http
+else
+    echo "Running Test Case: ${1}"
+    ${1}
 fi
 
 # Run Test Cases
 #baseline
-consul_http
+#consul_http
+#consul_grpc
