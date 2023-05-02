@@ -24,23 +24,9 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 5,
   "links": [],
   "liveNow": false,
   "panels": [
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "id": 37,
-      "panels": [],
-      "title": "Performance",
-      "type": "row"
-    },
     {
       "datasource": {
         "type": "prometheus",
@@ -74,7 +60,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 1
+        "y": 0
       },
       "id": 49,
       "options": {
@@ -146,7 +132,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 1
+        "y": 0
       },
       "id": 28,
       "options": {
@@ -247,7 +233,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 1
+        "y": 0
       },
       "id": 18,
       "options": {
@@ -273,14 +259,27 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "rate(container_cpu_cfs_throttled_seconds_total{namespace=\"$namespace\", container=\"consul-dataplane\", pod=~\"$app.*\"}[5m])",
+          "expr": "rate(container_cpu_cfs_throttled_seconds_total{namespace=\"$namespace\", container=\"consul-dataplane\"}[5m])",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "CPU Throttled Seconds ( $app )",
+      "title": "CPU Throttled seconds by pod",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 37,
+      "panels": [],
+      "title": "Performance",
+      "type": "row"
     },
     {
       "datasource": {
@@ -453,40 +452,15 @@
             ]
           }
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "<1ms"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 7,
-        "w": 8,
+        "w": 6,
         "x": 0,
         "y": 11
       },
-      "id": 52,
+      "id": 57,
       "options": {
         "legend": {
           "calcs": [],
@@ -509,7 +483,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "(rate(envoy_cluster_upstream_rq_time_count{namespace=\"$namespace\",envoy_cluster_name=~\"$app\"}[5m]) - on() rate(envoy_cluster_upstream_rq_time_bucket{le=\"1\",envoy_cluster_name=~\"$app\",namespace=\"$namespace\"}[5m]))",
+          "expr": "sum(rate(envoy_cluster_upstream_rq_time_count{namespace=\"$namespace\",envoy_cluster_name!~\"prometheus_backend|local_app\"}[5m])) - on() sum(rate(envoy_cluster_upstream_rq_time_bucket{le=\"1\",envoy_cluster_name!~\"prometheus_backend|local_app\",namespace=\"$namespace\"}[5m]))",
           "hide": false,
           "legendFormat": "<1ms",
           "range": true,
@@ -521,7 +495,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "(rate(envoy_cluster_upstream_rq_time_count{namespace=\"$namespace\",envoy_cluster_name=~\"$app\"}[5m]) - on() rate(envoy_cluster_upstream_rq_time_bucket{le=\"5\",envoy_cluster_name=~\"$app\",namespace=\"$namespace\"}[5m]))\n",
+          "expr": "sum(rate(envoy_cluster_upstream_rq_time_count{namespace=\"$namespace\",envoy_cluster_name!~\"prometheus_backend|local_app\"}[5m])) - on() sum(rate(envoy_cluster_upstream_rq_time_bucket{le=\"5\",envoy_cluster_name!~\"prometheus_backend|local_app\",namespace=\"$namespace\"}[5m]))\n",
           "hide": false,
           "legendFormat": "<5ms",
           "range": true,
@@ -533,7 +507,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "(rate(envoy_cluster_upstream_rq_time_count{namespace=\"$namespace\",envoy_cluster_name=~\"$app\"}[5m]) - on() rate(envoy_cluster_upstream_rq_time_bucket{le=\"10\",envoy_cluster_name=~\"$app\",namespace=\"$namespace\"}[5m]))",
+          "expr": "sum(rate(envoy_cluster_upstream_rq_time_count{namespace=\"$namespace\",envoy_cluster_name!~\"prometheus_backend|local_app\"}[5m])) - on() sum(rate(envoy_cluster_upstream_rq_time_bucket{le=\"10\",envoy_cluster_name!~\"prometheus_backend|local_app\",namespace=\"$namespace\"}[5m]))",
           "hide": false,
           "legendFormat": "<10ms",
           "range": true,
@@ -545,14 +519,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "(rate(envoy_cluster_upstream_rq_time_count{namespace=\"$namespace\",envoy_cluster_name=~\"$app\"}[5m]) - on() rate(envoy_cluster_upstream_rq_time_bucket{le=\"25\",envoy_cluster_name=~\"$app\",namespace=\"$namespace\"}[5m]))",
+          "expr": "sum(rate(envoy_cluster_upstream_rq_time_count{namespace=\"$namespace\",envoy_cluster_name!~\"prometheus_backend|local_app\"}[5m])) - on() sum(rate(envoy_cluster_upstream_rq_time_bucket{le=\"25\",envoy_cluster_name!~\"prometheus_backend|local_app\",namespace=\"$namespace\"}[5m]))",
           "hide": false,
           "legendFormat": "<25ms",
           "range": true,
           "refId": "C"
         }
       ],
-      "title": "Total Throughput by Latency ( $app )",
+      "title": "Total Throughput by Latency",
       "type": "timeseries"
     },
     {
@@ -614,8 +588,8 @@
       },
       "gridPos": {
         "h": 7,
-        "w": 8,
-        "x": 8,
+        "w": 6,
+        "x": 6,
         "y": 11
       },
       "id": 47,
@@ -648,7 +622,7 @@
           "refId": "A"
         }
       ],
-      "title": "HTTP Status Code ( $app )",
+      "title": "HTTP Status Codes ( $app )",
       "type": "timeseries"
     },
     {
@@ -706,49 +680,24 @@
             ]
           }
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "{app=\"fortio-client\", consul_hashicorp_com_connect_inject_managed_by=\"consul-k8s-endpoints-controller\", consul_hashicorp_com_connect_inject_status=\"injected\", consul_source_datacenter=\"dc1\", consul_source_namespace=\"fortio-consul\", consul_source_partition=\"default\", consul_source_service=\"fortio-client\", consul_upstream_datacenter=\"dc1\", consul_upstream_namespace=\"fortio-consul\", consul_upstream_partition=\"default\", consul_upstream_service=\"fortio-server-defaults-grpc\", envoy_http_conn_manager_prefix=\"upstream\", instance=\"10.16.1.131:20200\", job=\"kubernetes-pods\", local_cluster=\"fortio-client\", namespace=\"fortio-consul\", pod=\"fortio-client-5f4df59497-5rwzb\", pod_template_hash=\"5f4df59497\"}"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 7,
-        "w": 8,
-        "x": 16,
+        "w": 6,
+        "x": 12,
         "y": 11
       },
-      "id": 10,
+      "id": 55,
       "options": {
         "legend": {
           "calcs": [
-            "last"
+            "sum"
           ],
           "displayMode": "table",
-          "placement": "bottom",
+          "placement": "right",
           "showLegend": true,
-          "sortBy": "Last",
+          "sortBy": "Total",
           "sortDesc": true
         },
         "tooltip": {
@@ -763,14 +712,107 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum by (app,envoy_http_conn_manager_prefix) (rate(envoy_http_downstream_cx_total{namespace=\"$namespace\", pod=~\"$app.*\"}[5m]))",
-          "legendFormat": "{{app}}-{{envoy_http_conn_manager_prefix}}",
+          "expr": "sum by (app)(rate(envoy_listener_http_fortio_server_defaults_grpc_fortio_consul_default_dc1_downstream_rq_xx{envoy_response_code_class=~\"1|3|4|5\"}[$__rate_interval]))",
+          "hide": false,
+          "interval": "5m",
+          "legendFormat": "{{app}}-errors",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "rate(envoy_listener_http_fortio_server_defaults_grpc_fortio_consul_default_dc1_downstream_rq_xx{envoy_response_code_class=\"2\"}[$__rate_interval])",
+          "hide": false,
+          "interval": "5m",
+          "legendFormat": "{{app}}-success",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "GRPC Status",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 95
+              },
+              {
+                "color": "#EAB839",
+                "value": 98
+              },
+              {
+                "color": "blue",
+                "value": 99
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 18,
+        "y": 11
+      },
+      "id": 56,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "9.5.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "100*rate(envoy_cluster_grpc_fgrpc_PingServer_Ping_response_message_count{app=\"$app\"}[$__rate_interval]) / rate(envoy_cluster_grpc_fgrpc_PingServer_Ping_total{app=\"$app\"}[$__rate_interval])",
+          "hide": false,
+          "interval": "5m",
+          "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Upstream Requests",
-      "type": "timeseries"
+      "title": "GRPC Success Rate",
+      "type": "gauge"
     },
     {
       "datasource": {
@@ -786,7 +828,6 @@
           "custom": {
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "50p",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -869,7 +910,7 @@
           "refId": "A"
         }
       ],
-      "title": "Dataplane Latency by App",
+      "title": "P50 Latency by App",
       "type": "timeseries"
     },
     {
@@ -886,7 +927,6 @@
           "custom": {
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "p75",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -971,7 +1011,7 @@
           "refId": "A"
         }
       ],
-      "title": "Dataplane Latency by App",
+      "title": "P75 Latency by App",
       "type": "timeseries"
     },
     {
@@ -988,7 +1028,6 @@
           "custom": {
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "p90",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -1073,7 +1112,7 @@
           "refId": "A"
         }
       ],
-      "title": "Dataplane Latency by App",
+      "title": "P90 Latency by App",
       "type": "timeseries"
     },
     {
@@ -1090,7 +1129,6 @@
           "custom": {
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "p99",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -1173,7 +1211,7 @@
           "refId": "A"
         }
       ],
-      "title": "Dataplane Latency by App",
+      "title": "P99 Latency by App",
       "type": "timeseries"
     },
     {
@@ -1948,6 +1986,127 @@
       ],
       "title": "Reliability",
       "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "{app=\"fortio-client\", consul_hashicorp_com_connect_inject_managed_by=\"consul-k8s-endpoints-controller\", consul_hashicorp_com_connect_inject_status=\"injected\", consul_source_datacenter=\"dc1\", consul_source_namespace=\"fortio-consul\", consul_source_partition=\"default\", consul_source_service=\"fortio-client\", consul_upstream_datacenter=\"dc1\", consul_upstream_namespace=\"fortio-consul\", consul_upstream_partition=\"default\", consul_upstream_service=\"fortio-server-defaults-grpc\", envoy_http_conn_manager_prefix=\"upstream\", instance=\"10.16.1.131:20200\", job=\"kubernetes-pods\", local_cluster=\"fortio-client\", namespace=\"fortio-consul\", pod=\"fortio-client-5f4df59497-5rwzb\", pod_template_hash=\"5f4df59497\"}"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 15,
+        "y": 39
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Last",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum by (app,envoy_http_conn_manager_prefix) (rate(envoy_http_downstream_cx_total{namespace=\"$namespace\", pod=~\"$app.*\"}[5m]))",
+          "legendFormat": "{{app}}-{{envoy_http_conn_manager_prefix}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Upstream Requests",
+      "type": "timeseries"
     }
   ],
   "refresh": "5s",
@@ -1986,8 +2145,8 @@
       {
         "current": {
           "selected": true,
-          "text": "All",
-          "value": "$__all"
+          "text": "fortio-client",
+          "value": "fortio-client"
         },
         "datasource": {
           "type": "prometheus",
@@ -2019,6 +2178,6 @@
   "timezone": "",
   "title": "Kubernetes / Views / Consul / ServiceMesh",
   "uid": "zalReKEVp",
-  "version": 2,
+  "version": 1,
   "weekStart": ""
 }
