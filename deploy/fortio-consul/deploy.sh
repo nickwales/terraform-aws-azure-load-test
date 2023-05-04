@@ -5,8 +5,11 @@ deploy() {
     # deploy eastus services
     kubectl config use-context usw2-app1
     kubectl create namespace fortio-consul
+    kubectl create namespace fortio-consul-150
+
     kubectl apply -f ${SCRIPT_DIR}/init-consul-config
     kubectl apply -f ${SCRIPT_DIR}/.
+    kubectl apply -f ${SCRIPT_DIR}/fortio-consul-150
     echo
     echo "Waiting for fortio client pod to be ready..."
     echo
@@ -26,6 +29,8 @@ delete() {
     kubectl config use-context usw2-app1
     kubectl delete -f ${SCRIPT_DIR}/.
     kubectl delete -f ${SCRIPT_DIR}/init-consul-config
+    kubectl delete -f ${SCRIPT_DIR}/fortio-consul-150
+    kubectl delete namespace fortio-consul-150
     kubectl delete namespace fortio-consul
 }
 

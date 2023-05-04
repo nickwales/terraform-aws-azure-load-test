@@ -24,7 +24,7 @@ metadata:
     app:   fortio-server-defaults-grpc
   name:   fortio-server-defaults-grpc
 spec:
-  replicas: 1
+  replicas: 5
   selector:
     matchLabels:
       app:   fortio-server-defaults-grpc
@@ -34,10 +34,10 @@ spec:
       annotations:
         'consul.hashicorp.com/connect-inject': 'true'
         'consul.hashicorp.com/transparent-proxy': 'true'
-       # 'consul.hashicorp.com/sidecar-proxy-cpu-limit': '2m' # 0.002% of a CPU
-        'consul.hashicorp.com/sidecar-proxy-cpu-request': '2m'
-        # 'consul.hashicorp.com/sidecar-proxy-memory-limit': '50Mi'
-        # 'consul.hashicorp.com/sidecar-proxy-memory-request': '26Mi'
+        'consul.hashicorp.com/sidecar-proxy-cpu-limit': '100m' # 35% of a CPU
+        'consul.hashicorp.com/sidecar-proxy-cpu-request': '100m'
+        'consul.hashicorp.com/sidecar-proxy-memory-limit': '100Mi'
+        'consul.hashicorp.com/sidecar-proxy-memory-request': '100Mi'
       labels:
         app:   fortio-server-defaults-grpc
     spec:

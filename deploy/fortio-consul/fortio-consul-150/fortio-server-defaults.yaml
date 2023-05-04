@@ -2,13 +2,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name:   fortio-server-defaults
-  namespace: fortio-consul
+  namespace: fortio-consul-150
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name:   fortio-server-defaults
-  namespace: fortio-consul
+  namespace: fortio-consul-150
 spec:
   selector:
     app:   fortio-server-defaults
@@ -16,14 +16,11 @@ spec:
   - name: http
     port: 8080
     targetPort: 8080
-  - name: grpc
-    port: 8079
-    targetPort: 8079
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: fortio-consul
+  namespace: fortio-consul-150
   labels:
     app:   fortio-server-defaults
   name:   fortio-server-defaults
@@ -34,12 +31,12 @@ spec:
       app:   fortio-server-defaults
   template:
     metadata:
-      namespace: fortio-consul
+      namespace: fortio-consul-150
       annotations:
         'consul.hashicorp.com/connect-inject': 'true'
         'consul.hashicorp.com/transparent-proxy': 'true'
-        'consul.hashicorp.com/sidecar-proxy-cpu-limit': '100m' # 35% of a CPU
-        'consul.hashicorp.com/sidecar-proxy-cpu-request': '100m'
+        'consul.hashicorp.com/sidecar-proxy-cpu-limit': '150m' # 35% of a CPU
+        'consul.hashicorp.com/sidecar-proxy-cpu-request': '150m'
         'consul.hashicorp.com/sidecar-proxy-memory-limit': '100Mi'
         'consul.hashicorp.com/sidecar-proxy-memory-request': '100Mi'
       labels:
@@ -52,8 +49,6 @@ spec:
         ports:
         - containerPort: 8080
           name: http-fortio
-        - containerPort: 8079
-          name: grpc-ping        
       serviceAccountName:   fortio-server-defaults
       nodeSelector:
         nodegroup: services
