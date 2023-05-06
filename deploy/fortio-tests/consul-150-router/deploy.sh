@@ -1,37 +1,30 @@
 #!/bin/bash
 SCRIPT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
+nodeSelector="--set nodeSelector.nodegroup=default"
 
 deploy() {
     # deploy eastus services
     kubectl config use-context usw2-app1
-    kubectl create namespace fortio-consul
-    kubectl create namespace fortio-consul-150
-
-    kubectl apply -f ${SCRIPT_DIR}/init-consul-config
+    kubectl create namespace fortio-consul-150-router
+    kubectl apply -f ${SCRIPT_DIR}/init-consul-config 
     kubectl apply -f ${SCRIPT_DIR}/.
-    kubectl apply -f ${SCRIPT_DIR}/fortio-consul-150
-    echo
-    echo "Waiting for fortio client pod to be ready..."
-    echo
-    kubectl -n fortio-consul wait --for=condition=ready pod -l app=fortio-client
-    echo
+
     echo 
     echo "grafana"
     echo "http://$(kubectl -n metrics get svc -l app.kubernetes.io/name=grafana -o json | jq -r '.items[].status.loadBalancer.ingress[].hostname'):3000"
     # Output Ingress URL for fortio
     echo
-    echo "fortio"
-    echo "http://$(kubectl -n consul get svc -l component=ingress-gateway -o json | jq -r '.items[].status.loadBalancer.ingress[].hostname'):8080/fortio"
+    echo "To Run Load Test - port-forward fortio client with this command"
+    echo "kc -n fortio-consul-150-router port-forward deploy/fortio-client 8080:8080"
     echo
+    echo "http://localhost:8080/fortio"
 }
 
 delete() {
     kubectl config use-context usw2-app1
     kubectl delete -f ${SCRIPT_DIR}/.
     kubectl delete -f ${SCRIPT_DIR}/init-consul-config
-    kubectl delete -f ${SCRIPT_DIR}/fortio-consul-150
-    kubectl delete namespace fortio-consul-150
-    kubectl delete namespace fortio-consul
+    kubectl delete namespace fortio-consul-150-router
 }
 
 #Cleanup if any param is given on CLI

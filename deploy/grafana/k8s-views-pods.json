@@ -26,7 +26,6 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 15760,
   "graphTooltip": 1,
-  "id": 6,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -952,6 +951,7 @@
           "exemplar": false,
           "expr": "sum(kube_pod_container_resource_requests{exported_namespace=\"$namespace\", pod=\"$pod\", unit=\"core\"}) by (container)",
           "format": "table",
+          "hide": false,
           "instant": true,
           "interval": "",
           "intervalFactor": 1,
@@ -967,6 +967,7 @@
           "exemplar": false,
           "expr": "sum(kube_pod_container_resource_limits{exported_namespace=\"$namespace\", pod=\"$pod\", unit=\"core\"}) by (container)",
           "format": "table",
+          "hide": false,
           "instant": true,
           "interval": "",
           "intervalFactor": 1,
@@ -980,8 +981,25 @@
           },
           "editorMode": "code",
           "exemplar": false,
+          "expr": "sum(rate(container_cpu_cfs_throttled_seconds_total{namespace=\"$namespace\", pod=\"$pod\", image!=\"\", container!=\"\"}[$__rate_interval])) by (container)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "$resolution",
+          "legendFormat": "",
+          "range": false,
+          "refId": "G"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
           "expr": "sum(kube_pod_container_resource_requests{exported_namespace=\"$namespace\", pod=\"$pod\", unit=\"byte\"}) by (container)",
           "format": "table",
+          "hide": false,
           "instant": true,
           "interval": "",
           "legendFormat": "",
@@ -996,6 +1014,7 @@
           "exemplar": false,
           "expr": "sum(kube_pod_container_resource_limits{exported_namespace=\"$namespace\", pod=\"$pod\", unit=\"byte\"}) by (container)",
           "format": "table",
+          "hide": false,
           "instant": true,
           "interval": "",
           "legendFormat": "",
@@ -1096,27 +1115,31 @@
               "unit 4": true
             },
             "indexByName": {
-              "Time 1": 7,
-              "Time 2": 8,
-              "Time 3": 9,
-              "Time 4": 10,
-              "Time 5": 11,
-              "Time 6": 12,
+              "Time 1": 8,
+              "Time 2": 9,
+              "Time 3": 10,
+              "Time 4": 11,
+              "Time 5": 12,
+              "Time 6": 13,
+              "Time 7": 14,
               "Value #A": 2,
               "Value #B": 3,
-              "Value #C": 5,
-              "Value #D": 6,
+              "Value #C": 6,
+              "Value #D": 7,
               "Value #E": 1,
-              "Value #F": 4,
+              "Value #F": 5,
+              "Value #G": 4,
               "container": 0
             },
             "renameByName": {
+              "Time 1": "",
               "Value #A": "CPU Requests",
               "Value #B": "CPU Limits",
               "Value #C": "Memory Requests",
               "Value #D": "Memory Limits",
               "Value #E": "CPU Used",
               "Value #F": "Memory Used",
+              "Value #G": "CPU Throttled",
               "container": "Container"
             }
           }
@@ -2104,8 +2127,8 @@
       {
         "current": {
           "selected": false,
-          "text": "fortio-server-defaults-grpc-5c7fbc9dd5-t2j5h",
-          "value": "fortio-server-defaults-grpc-5c7fbc9dd5-t2j5h"
+          "text": "fortio-server-defaults-67bd749fd8-bsm2r",
+          "value": "fortio-server-defaults-67bd749fd8-bsm2r"
         },
         "datasource": {
           "type": "prometheus",
@@ -2187,6 +2210,6 @@
   "timezone": "",
   "title": "Kubernetes / Views / Pods",
   "uid": "k8s_views_pods",
-  "version": 4,
+  "version": 1,
   "weekStart": ""
 }

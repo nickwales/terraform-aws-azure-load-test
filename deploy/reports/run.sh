@@ -9,10 +9,10 @@ CONNECTIONS=(2 4 8 16 32)
 
 baseline_http() {
     Label="Baseline-HTTP"
-    REPORT="$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_$(date '+%m%y-%H%M').csv"
     if [[ -z $NAMESPACE ]]; then
         NAMESPACE="fortio-baseline"
     fi
+    REPORT="$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_$(date '+%m%y-%H%M').csv"
     for c in "${CONNECTIONS[@]}"
     do
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
@@ -29,10 +29,10 @@ baseline_http() {
 }
 baseline_grpc() {
     Label="Baseline-GRPC"
-    REPORT="$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_$(date '+%m%y-%H%M').csv"
     if [[ -z $NAMESPACE ]]; then
         NAMESPACE="fortio-baseline"
     fi
+    REPORT="$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_$(date '+%m%y-%H%M').csv"
     for c in "${CONNECTIONS[@]}"
     do
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
@@ -49,14 +49,14 @@ baseline_grpc() {
 }
 consul_http() {
     Label="Consul-HTTP"
-    REPORT="$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_$(date '+%m%y-%H%M').csv"
     if [[ -z $NAMESPACE ]]; then
-        NAMESPACE="fortio-consul"
+        NAMESPACE="fortio-consul-100"
     fi
+    REPORT="$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_$(date '+%m%y-%H%M').csv"
     for c in "${CONNECTIONS[@]}"
     do
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
-        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps 1000 -c $c -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > $TMP
+        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps 1000 -c $c -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -H "${HEADERS}" -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > $TMP
         sleep $RECOVERY_TIME
         report $REPORT
         
@@ -69,10 +69,10 @@ consul_http() {
 }
 consul_grpc() {
     Label="Consul-GRPC"
-    REPORT="$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_$(date '+%m%y-%H%M').csv"
     if [[ -z $NAMESPACE ]]; then
-        NAMESPACE="fortio-consul"
+        NAMESPACE="fortio-consul-100"
     fi
+    REPORT="$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_$(date '+%m%y-%H%M').csv"
     for c in "${CONNECTIONS[@]}"
     do
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
@@ -91,6 +91,12 @@ report () {
     REPORT="${1}"
     if [[  ${JSON} == "" ]]; then
         break
+    fi
+    # Sometimes Fortio doesn't finish creating stdout.  Not sure why...
+    if [[ ! -f $TMP ]]; then
+        echo "Fortio $TMP is not available. Sleeping 60 sec..."
+        sleep 60
+        ls $TMP
     fi
     TMP_JSON=$(cat $TMP | grep -e "^{" -e "^}" -e "^\s")
     Labels=$(echo $TMP_JSON |  jq -r '.Labels')
@@ -117,9 +123,8 @@ report () {
     echo "$Labels,$RunType,$NAMESPACE,$RequestedDuration,$RequestedQPS,$NumThreads,${p50},${p75},${p90},${p99},${p999},$Errors,$Streams,$Destination" >> /tmp/$REPORT
     echo "${Labels} Report: wrote csv output to file: /tmp/$REPORT"
     if [[  ${Labels} == "" ]]; then
-        bkup="${TMP}-$(date'+%m%y-%H%M')"
-        cp $TMP $bkup
-        echo "Something went wrong. wrote saved Fortio report to $bkup"
+        cp ${TMP} "${TMP}.$(date '+%m%y-%H%M').bkup"
+        echo "ERROR: Something went wrong. wrote saved Fortio report to ${TMP}.bkup"
     fi
 }
 
@@ -130,7 +135,7 @@ usage() {
     exit 1; 
 }
 
-while getopts "d:c:n:t:p:j" o; do
+while getopts "d:c:n:t:p:w:jh:" o; do
     case "${o}" in
         c)
             CONNECTIONS=(${OPTARG})
@@ -154,10 +159,18 @@ while getopts "d:c:n:t:p:j" o; do
             PAYLOAD="${OPTARG}"
             echo "Running with Payload: $PAYLOAD"
             ;;
+        w)
+            RECOVERY_TIME="${OPTARG}"
+            echo "Injecting Recovery Time of $RECOVERY_TIME between tests"
+            ;;
         j)
             JSON="-json -"
             echo "Redirecting JSON Output to STDOUT for reporting"
             echo "Fortio will NOT save graphs in UI when this is enabled"
+            ;;
+        h)
+            HEADERS="${OPTARG}"
+            echo "Adding Headers: ${HEADERS}"
             ;;
         *)
             usage
