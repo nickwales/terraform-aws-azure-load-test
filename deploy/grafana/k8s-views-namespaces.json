@@ -1696,7 +1696,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "Kubernetes / Views / Namespaces",
-  "uid": "k8s_views_ns",
+  "uid": "k8s_views_namespaces",
   "version": 1,
   "weekStart": ""
 }

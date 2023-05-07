@@ -6,6 +6,7 @@ deploy() {
     kubectl config use-context usw2-app1
     kubectl create namespace fortio-consul-100
     kubectl create namespace fortio-consul-150
+    kubectl create namespace fortio-consul-logs
 
     kubectl apply -f ${SCRIPT_DIR}/baseline/init  # create ns fortio-baseline
     kubectl apply -f ${SCRIPT_DIR}/baseline
@@ -13,6 +14,8 @@ deploy() {
     kubectl apply -f ${SCRIPT_DIR}/consul-100
     kubectl apply -f ${SCRIPT_DIR}/consul-150/init-consul-config
     kubectl apply -f ${SCRIPT_DIR}/consul-150
+    kubectl apply -f ${SCRIPT_DIR}/consul-logs/init-consul-config
+    kubectl apply -f ${SCRIPT_DIR}/consul-logs
     echo
     echo "Waiting for fortio client pod to be ready..."
     echo
@@ -32,12 +35,15 @@ delete() {
     kubectl config use-context usw2-app1
     kubectl delete -f ${SCRIPT_DIR}/consul-100
     kubectl delete -f ${SCRIPT_DIR}/consul-100/init-consul-config
+    kubectl delete -f ${SCRIPT_DIR}/consul-logs
+    kubectl delete -f ${SCRIPT_DIR}/consul-logs/init-consul-config
     kubectl delete -f ${SCRIPT_DIR}/consul-150
     kubectl delete -f ${SCRIPT_DIR}/consul-150/init-consul-config
     kubectl delete -f ${SCRIPT_DIR}/baseline
     kubectl delete -f ${SCRIPT_DIR}/baseline/init
     kubectl delete namespace fortio-consul-150
-    kubectl delete namespace fortio-consul
+    kubectl delete namespace fortio-consul-100
+    kubectl delete namespace fortio-consul-logs
 }
 
 #Cleanup if any param is given on CLI

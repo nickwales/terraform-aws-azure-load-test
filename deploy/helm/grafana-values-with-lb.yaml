@@ -54,7 +54,9 @@ dashboards:
       url: https://raw.githubusercontent.com/ppresto/terraform-aws-azure-load-test/patrick/deploy/grafana/k8s-views-global.json
     local-dashboard-k8snamespaces:
       url: https://raw.githubusercontent.com/ppresto/terraform-aws-azure-load-test/patrick/deploy/grafana/k8s-views-namespaces.json
-    local-dashboard-k8spod:
+    local-dashboard-k8spods:
       url: https://raw.githubusercontent.com/ppresto/terraform-aws-azure-load-test/patrick/deploy/grafana/k8s-views-pods.json
+    local-dashboard-k8snodes:
+      url: https://raw.githubusercontent.com/ppresto/terraform-aws-azure-load-test/patrick/deploy/grafana/k8s-views-nodes.json
     local-dashboard-k8sconsul:
       url: https://raw.githubusercontent.com/ppresto/terraform-aws-azure-load-test/patrick/deploy/grafana/k8s-views-consul-mesh.json

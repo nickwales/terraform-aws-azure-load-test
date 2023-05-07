@@ -56,7 +56,7 @@ consul_http() {
     for c in "${CONNECTIONS[@]}"
     do
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
-        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps 1000 -c $c -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -H "${HEADERS}" -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > $TMP
+        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps 1000 -c $c -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" ${HEADERS} -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > $TMP
         sleep $RECOVERY_TIME
         report $REPORT
         
@@ -123,8 +123,9 @@ report () {
     echo "$Labels,$RunType,$NAMESPACE,$RequestedDuration,$RequestedQPS,$NumThreads,${p50},${p75},${p90},${p99},${p999},$Errors,$Streams,$Destination" >> /tmp/$REPORT
     echo "${Labels} Report: wrote csv output to file: /tmp/$REPORT"
     if [[  ${Labels} == "" ]]; then
-        cp ${TMP} "${TMP}.$(date '+%m%y-%H%M').bkup"
-        echo "ERROR: Something went wrong. wrote saved Fortio report to ${TMP}.bkup"
+        TMP_FILE="/tmp/${TMP}.$(date '+%m%y-%H%M').bkup"
+        cp ${TMP} ${TMP_FILE}
+        echo "ERROR: Something went wrong. wrote saved Fortio report to ${TMP_FILE}"
     fi
 }
 
@@ -169,7 +170,7 @@ while getopts "d:c:n:t:p:w:jh:" o; do
             echo "Fortio will NOT save graphs in UI when this is enabled"
             ;;
         h)
-            HEADERS="${OPTARG}"
+            HEADERS="-H ${OPTARG}"
             echo "Adding Headers: ${HEADERS}"
             ;;
         *)
