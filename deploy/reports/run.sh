@@ -1,25 +1,27 @@
 #!/bin/bash
 SCRIPT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
-TMP=/tmp/fortio.results
+RESULTS=/tmp/fortio.results.csv
 DURATION=10
 RECOVERY_TIME=30
 PAYLOAD=""
 JSON=""
-CONNECTIONS=(2 4 8 16 32)
+QPS=1000
+CONNECTIONS=(2 4 8 16 32 64)
 
 baseline_http() {
     Label="Baseline-HTTP"
     if [[ -z $NAMESPACE ]]; then
         NAMESPACE="fortio-baseline"
     fi
-    REPORT="$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_$(date '+%m%y-%H%M').csv"
     for c in "${CONNECTIONS[@]}"
     do
+        DATE=$(date '+%m%d%Y-%H%M%S')
+        REPORT="/tmp/$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_${c}c_${DATE}.json"
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
-        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps 1000 -c ${c} -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > $TMP
+        command="kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps ${QPS} -c ${c} -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo"
+        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps ${QPS} -c ${c} -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > "${REPORT}"
         sleep $RECOVERY_TIME
-        report $REPORT
-        
+        report $REPORT $DATE
     done
     echo
     echo "To See Load Test results port-forward fortio client and click on Browse 'saved results'"
@@ -32,13 +34,14 @@ baseline_grpc() {
     if [[ -z $NAMESPACE ]]; then
         NAMESPACE="fortio-baseline"
     fi
-    REPORT="$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_$(date '+%m%y-%H%M').csv"
     for c in "${CONNECTIONS[@]}"
     do
+        DATE=$(date '+%m%d%Y-%H%M%S')
+        REPORT="/tmp/$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_${c}c_${DATE}.json"
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
-        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -grpc -ping -qps 1000 -c $c -s 1 -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} fortio-server-defaults:8079 > $TMP
+        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -grpc -ping -qps 1000 -c $c -s 1 -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} fortio-server-defaults:8079 > "${REPORT}"
         sleep $RECOVERY_TIME
-        report $REPORT
+        report $REPORT $DATE
         
     done
     echo
@@ -52,13 +55,14 @@ consul_http() {
     if [[ -z $NAMESPACE ]]; then
         NAMESPACE="fortio-consul-100"
     fi
-    REPORT="$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_$(date '+%m%y-%H%M').csv"
     for c in "${CONNECTIONS[@]}"
     do
+        DATE=$(date '+%m%d%Y-%H%M%S')
+        REPORT="/tmp/$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_${c}c_${DATE}.json"
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
-        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps 1000 -c $c -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" ${HEADERS} -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > $TMP
+        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps 1000 -c $c -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" ${HEADERS} -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > "${REPORT}"
         sleep $RECOVERY_TIME
-        report $REPORT
+        report $REPORT $DATE
         
     done
     echo
@@ -72,13 +76,14 @@ consul_grpc() {
     if [[ -z $NAMESPACE ]]; then
         NAMESPACE="fortio-consul-100"
     fi
-    REPORT="$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_$(date '+%m%y-%H%M').csv"
     for c in "${CONNECTIONS[@]}"
     do
+        DATE=$(date '+%m%d%Y-%H%M%S')
+        REPORT="/tmp/$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_${c}c_${DATE}.json"
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
-        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -grpc -ping -qps 1000 -c $c -s 1 -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" -json - fortio-server-defaults-grpc:8079 > $TMP
+        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -grpc -ping -qps 1000 -c $c -s 1 -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" -json - fortio-server-defaults-grpc:8079 > "${REPORT}"
         sleep $RECOVERY_TIME
-        report $REPORT
+        report $REPORT  $DATE
         
     done
     echo
@@ -89,16 +94,15 @@ consul_grpc() {
 }
 report () {
     REPORT="${1}"
-    if [[  ${JSON} == "" ]]; then
-        break
-    fi
+    DATE="${2}"
+    # if [[  ${JSON} == "" ]]; then
+    #     break 1
+    # fi
     # Sometimes Fortio doesn't finish creating stdout.  Not sure why...
-    if [[ ! -f $TMP ]]; then
-        echo "Fortio $TMP is not available. Sleeping 60 sec..."
-        sleep 60
-        ls $TMP
+    if [[ ! -f $REPORT ]]; then
+        echo "ERROR: File not found. $REPORT"
     fi
-    TMP_JSON=$(cat $TMP | grep -e "^{" -e "^}" -e "^\s")
+    TMP_JSON=$(cat $REPORT | grep -e "^{" -e "^}" -e "^\s")
     Labels=$(echo $TMP_JSON |  jq -r '.Labels')
     RunType=$(echo $TMP_JSON |  jq -r '.RunType')
     RequestedQPS=$(echo $TMP_JSON |  jq -r '.RequestedQPS')
@@ -114,19 +118,14 @@ report () {
     p99=$(echo $TMP_JSON | jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==99) | .Value')
     p999=$(echo $TMP_JSON| jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==99.9) | .Value')
 
-    if [[ ! -f /tmp/$REPORT ]]; then
-        echo "Name,Type,Namespace,Duration,QPS,Connections,P50_${Labels},P75_${Labels},P90_${Labels},P99_${Labels},P99.9_${Labels},Errors,Streams,Destination" > /tmp/$REPORT
+    if [[ ! -f $RESULTS ]]; then
+        echo "Date,Name,Type,Namespace,Duration,QPS,Connections,P50_${Labels},P75_${Labels},P90_${Labels},P99_${Labels},P99.9_${Labels},Errors,Streams,Destination" > $RESULTS
     fi
     if [[ $Destination == "null" ]]; then
         Destination=$URL
     fi
-    echo "$Labels,$RunType,$NAMESPACE,$RequestedDuration,$RequestedQPS,$NumThreads,${p50},${p75},${p90},${p99},${p999},$Errors,$Streams,$Destination" >> /tmp/$REPORT
-    echo "${Labels} Report: wrote csv output to file: /tmp/$REPORT"
-    if [[  ${Labels} == "" ]]; then
-        TMP_FILE="/tmp/${TMP}.$(date '+%m%y-%H%M').bkup"
-        cp ${TMP} ${TMP_FILE}
-        echo "ERROR: Something went wrong. wrote saved Fortio report to ${TMP_FILE}"
-    fi
+    echo "$DATE,$Labels,$RunType,$NAMESPACE,$RequestedDuration,$RequestedQPS,$NumThreads,${p50},${p75},${p90},${p99},${p999},$Errors,$Streams,$Destination" >> $RESULTS
+    echo "${Labels} Report: wrote csv output to file: $RESULTS"
 }
 
 usage() { 
@@ -136,8 +135,14 @@ usage() {
     exit 1; 
 }
 
-while getopts "d:c:n:t:p:w:jh:" o; do
+while getopts "d:c:n:t:p:w:jh:q:" o; do
     case "${o}" in
+        q)
+            QPS=(${OPTARG})
+            if ! [[ ${QPS} =~ ^[0-9]+$ ]]; then
+                usage
+            fi
+            ;;
         c)
             CONNECTIONS=(${OPTARG})
             if ! [[ ${CONNECTIONS} =~ ^[0-9]+$ ]]; then

@@ -50,6 +50,13 @@ spec:
           name: http-fortio
         - containerPort: 8079
           name: grpc-ping        
+        volumeMounts:
+        - name: reports
+          mountPath: /var/lib/fortio
+      volumes:
+      - name: reports
+        emptyDir:
+            medium: Memory
       serviceAccountName: fortio-client
       nodeSelector:
         nodegroup: services
