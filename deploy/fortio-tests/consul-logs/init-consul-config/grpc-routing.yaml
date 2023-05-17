@@ -15,5 +15,3 @@ spec:
         requestHeaders:
           add:
             {"MY_CUSTOM_HEADER_2":"VVVVVVVVVVVVVVVVVVVVVVVVVVVV"}
-
-  # NOTE: a default catch-all will send unmatched traffic to "billing"

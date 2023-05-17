@@ -19,7 +19,7 @@ deploy() {
     echo
     echo "Waiting for fortio client pod to be ready..."
     echo
-    kubectl -n fortio-consul wait --for=condition=ready pod -l app=fortio-client
+    kubectl -n fortio-consul-100 wait --for=condition=ready pod -l app=fortio-client
     echo
     echo 
     echo "grafana"

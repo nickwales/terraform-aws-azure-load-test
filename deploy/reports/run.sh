@@ -21,7 +21,7 @@ baseline_http() {
         command="kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps ${QPS} -c ${c} -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo"
         kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps ${QPS} -c ${c} -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > "${REPORT}"
         sleep $RECOVERY_TIME
-        report $REPORT $DATE
+        report $REPORT $DATE ${NAMESPACE}
     done
     echo
     echo "To See Load Test results port-forward fortio client and click on Browse 'saved results'"
@@ -41,7 +41,7 @@ baseline_grpc() {
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
         kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -grpc -ping -qps 1000 -c $c -s 1 -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} fortio-server-defaults:8079 > "${REPORT}"
         sleep $RECOVERY_TIME
-        report $REPORT $DATE
+        report $REPORT $DATE ${NAMESPACE}
         
     done
     echo
@@ -62,7 +62,7 @@ consul_http() {
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
         kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps 1000 -c $c -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" ${HEADERS} -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > "${REPORT}"
         sleep $RECOVERY_TIME
-        report $REPORT $DATE
+        report $REPORT $DATE ${NAMESPACE}
         
     done
     echo
@@ -83,7 +83,7 @@ consul_grpc() {
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
         kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -grpc -ping -qps 1000 -c $c -s 1 -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" -json - fortio-server-defaults-grpc:8079 > "${REPORT}"
         sleep $RECOVERY_TIME
-        report $REPORT  $DATE
+        report $REPORT $DATE ${NAMESPACE}
         
     done
     echo
@@ -92,40 +92,77 @@ consul_grpc() {
     echo
     echo "http://localhost:8080/fortio"
 }
+get_cpu_used(){
+    # Call Prometheus API to capture container_cpu_usage_seconds_total for the consul-dataplane container.
+    NS="${1}"
+    metric=$(kubectl -n consul exec -it consul-server-0 -- sh -c "export starttime=\$(date +'%Y-%m-%dT%H:%M:%SZ' -d@\"\$(( `date +%s`-${DURATION}))\") &&
+    export endtime=\$(date +'%Y-%m-%dT%H:%M:%SZ') &&
+    curl -s prometheus-server.metrics/api/v1/query_range \
+    --header 'Content-Type: application/x-www-form-urlencoded'  \
+    --data-urlencode 'query=sum(rate(container_cpu_usage_seconds_total{namespace=\"$NS\", pod=~\"fortio-client.*\",container=\"consul-dataplane\"}[5m]))' \
+    --data-urlencode start=\$starttime \
+    --data-urlencode end=\$endtime  \
+    --data-urlencode step=30s")
+    # Prometheus output generates ^M character which is hard to remove.  Needed to use the escape code '\015'
+    #echo "${metric}" | tr -d '\015'
+    echo "${metric}" | tr -d '\015'
+}
+get_mem_used(){
+    # Call Prometheus API to capture container_memory_working_set_bytes for the consul-dataplane container.
+    NS="${1}"
+    metric=$(kubectl -n consul exec -it consul-server-0 -- sh -c "export starttime=\$(date +'%Y-%m-%dT%H:%M:%SZ' -d@\"\$(( `date +%s`-${DURATION}))\") &&
+    export endtime=\$(date +'%Y-%m-%dT%H:%M:%SZ') &&
+    curl -s prometheus-server.metrics/api/v1/query \
+    --header 'Content-Type: application/x-www-form-urlencoded'  \
+    --data-urlencode 'query=sum(container_memory_working_set_bytes{namespace=\"$NS\", pod=~\"fortio-client.*\",container=\"consul-dataplane\"})' \
+    --data-urlencode start=\$starttime")
+    # Prometheus output generates ^M character which is hard to remove.  Needed to use the escape code '\015'
+    echo "${metric}" | tr -d '\015'
+}
+
 report () {
     REPORT="${1}"
     DATE="${2}"
-    # if [[  ${JSON} == "" ]]; then
-    #     break 1
-    # fi
-    # Sometimes Fortio doesn't finish creating stdout.  Not sure why...
-    if [[ ! -f $REPORT ]]; then
-        echo "ERROR: File not found. $REPORT"
-    fi
-    TMP_JSON=$(cat $REPORT | grep -e "^{" -e "^}" -e "^\s")
-    Labels=$(echo $TMP_JSON |  jq -r '.Labels')
-    RunType=$(echo $TMP_JSON |  jq -r '.RunType')
-    RequestedQPS=$(echo $TMP_JSON |  jq -r '.RequestedQPS')
-    NumThreads=$(echo $TMP_JSON |  jq -r '.NumThreads')
-    RequestedDuration=$(echo $TMP_JSON |  jq -r '.RequestedDuration')
-    Errors=$(echo $TMP_JSON |  jq -r '.ErrorsDurationHistogram.Count')
-    Destination=$(echo $TMP_JSON |  jq -r '.Destination')
-    URL=$(echo $TMP_JSON |  jq -r '.URL')
-    Streams=$(echo $TMP_JSON |  jq -r '.Streams')
-    p50=$(echo $TMP_JSON |  jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==50) | .Value')
-    p75=$(echo $TMP_JSON | jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==75) | .Value')
-    p90=$(echo $TMP_JSON | jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==90) | .Value')
-    p99=$(echo $TMP_JSON | jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==99) | .Value')
-    p999=$(echo $TMP_JSON| jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==99.9) | .Value')
+    NS="${3}"
+    if [[  ${JSON} != "" ]]; then
+        # Sometimes Fortio doesn't finish creating stdout.  Not sure why...
+        if [[ ! -f $REPORT ]]; then
+            echo "ERROR: Report file not found:  $REPORT"
+        fi
+        TMP_JSON=$(cat $REPORT | grep -e "^{" -e "^}" -e "^\s")
+        Labels=$(echo $TMP_JSON |  jq -r '.Labels')
+        RunType=$(echo $TMP_JSON |  jq -r '.RunType')
+        RequestedQPS=$(echo $TMP_JSON |  jq -r '.RequestedQPS')
+        NumThreads=$(echo $TMP_JSON |  jq -r '.NumThreads')
+        RequestedDuration=$(echo $TMP_JSON |  jq -r '.RequestedDuration')
+        Errors=$(echo $TMP_JSON |  jq -r '.ErrorsDurationHistogram.Count')
+        Destination=$(echo $TMP_JSON |  jq -r '.Destination')
+        URL=$(echo $TMP_JSON |  jq -r '.URL')
+        Streams=$(echo $TMP_JSON |  jq -r '.Streams')
+        #Prometheus metrics.  
+        cpu_metric=$(echo "$(get_cpu_used ${NS})")
+        mem_metric=$(echo "$(get_mem_used ${NS})")
+        # CPU usage is taken every 30s and this returns the last slice.
+        cpu_last=$(echo $cpu_metric | jq -r '.data.result[].values[-1][1]')
+        mem_last=$(echo $mem_metric | jq -r '.data.result[].value[1]')
+        # *1000|bc converts output to milliseconds
+        p50=$(echo $TMP_JSON |  jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==50) | .Value'*1000|bc)
+        p75=$(echo $TMP_JSON | jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==75) | .Value'*1000|bc)
+        p90=$(echo $TMP_JSON | jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==90) | .Value'*1000|bc)
+        p99=$(echo $TMP_JSON | jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==99) | .Value'*1000|bc)
+        p999=$(echo $TMP_JSON| jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==99.9) | .Value'*1000|bc)
 
-    if [[ ! -f $RESULTS ]]; then
-        echo "Date,Name,Type,Namespace,Duration,QPS,Connections,P50_${Labels},P75_${Labels},P90_${Labels},P99_${Labels},P99.9_${Labels},Errors,Streams,Destination" > $RESULTS
+        if [[ ! -f $RESULTS ]]; then
+            echo "Date,Name,Type,Namespace,Duration,QPS,CPU,Mem,Connections,P50_${Labels},P75_${Labels},P90_${Labels},P99_${Labels},P99.9_${Labels},Errors,Streams,Destination" > $RESULTS
+        fi
+        if [[ $Destination == "null" ]]; then
+            Destination=$URL
+        fi
+        echo "$DATE,$Labels,$RunType,$NAMESPACE,$RequestedDuration,$RequestedQPS,${cpu_last},${mem_last},$NumThreads,${p50},${p75},${p90},${p99},${p999},$Errors,$Streams,$Destination" >> $RESULTS
+        echo "Metric Data - Memory: $(get_mem_used ${NS})"
+        echo "Metric Data - CPU: $(get_cpu_used ${NS})"
+        echo "${Labels} Report: wrote csv output to file: $RESULTS"
     fi
-    if [[ $Destination == "null" ]]; then
-        Destination=$URL
-    fi
-    echo "$DATE,$Labels,$RunType,$NAMESPACE,$RequestedDuration,$RequestedQPS,$NumThreads,${p50},${p75},${p90},${p99},${p999},$Errors,$Streams,$Destination" >> $RESULTS
-    echo "${Labels} Report: wrote csv output to file: $RESULTS"
 }
 
 usage() { 
@@ -194,5 +231,4 @@ if [[ -z $TEST ]]; then
     echo "Running Default HTTP Test: consul_http in k8s namespace fortio-consul"
     TEST="consul_http"
 fi
-
 $TEST
