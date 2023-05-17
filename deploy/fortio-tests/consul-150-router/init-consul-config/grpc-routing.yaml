@@ -1,0 +1,19 @@
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceRouter
+metadata:
+  name: fortio-client
+  namespace: fortio-consul-150-router
+spec:
+  routes:
+    - match:
+        http:
+          header:
+            - name: myheader
+              exact: '1'
+      destination:
+        service: fortio-server-defaults
+        requestHeaders:
+          add:
+            myheader2:test
+
+  # NOTE: a default catch-all will send unmatched traffic to "billing"

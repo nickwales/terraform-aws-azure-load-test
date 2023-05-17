@@ -1,0 +1,17 @@
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceRouter
+metadata:
+  name: fortio-client
+  namespace: fortio-consul-logs
+spec:
+  routes:
+    - match:
+        http:
+          header:
+            - name: MY_CUSTOM_HEADER1
+              exact: '1'
+      destination:
+        service: fortio-server-defaults
+        requestHeaders:
+          add:
+            {"MY_CUSTOM_HEADER_2":"VVVVVVVVVVVVVVVVVVVVVVVVVVVV"}
