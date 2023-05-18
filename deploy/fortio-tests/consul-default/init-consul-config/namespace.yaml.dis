@@ -2,6 +2,6 @@
 kind: Namespace
 apiVersion: v1
 metadata:
-  name: fortio-consul-100
+  name: fortio-consul-default
   labels:
     name: consul

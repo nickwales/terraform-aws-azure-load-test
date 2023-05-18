@@ -2,7 +2,7 @@ apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceIntentions
 metadata:
   name: fortio-client
-  namespace: fortio-consul-100
+  namespace: fortio-consul-default
 spec:
   destination:
     name: fortio-client
@@ -14,7 +14,7 @@ apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceIntentions
 metadata:
   name:   fortio-server-defaults
-  namespace: fortio-consul-100
+  namespace: fortio-consul-default
 spec:
   destination:
     name:   fortio-server-defaults
@@ -26,7 +26,7 @@ apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceIntentions
 metadata:
   name:   fortio-server-defaults-grpc
-  namespace: fortio-consul-100
+  namespace: fortio-consul-default
 spec:
   destination:
     name:   fortio-server-defaults-grpc

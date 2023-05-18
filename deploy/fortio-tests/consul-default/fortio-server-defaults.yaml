@@ -1,48 +1,53 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: fortio-client
-  namespace: fortio-consul-100
+  name:   fortio-server-defaults
+  namespace: fortio-consul-default
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: fortio-client
-  namespace: fortio-consul-100
+  name:   fortio-server-defaults
+  namespace: fortio-consul-default
 spec:
   selector:
-    app: fortio-client
+    app:   fortio-server-defaults
   ports:
-  - port: 8080
+  - name: http
+    port: 8080
     targetPort: 8080
+  - name: grpc
+    port: 8079
+    targetPort: 8079
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: fortio-consul-100
+  namespace: fortio-consul-default
   labels:
-    app: fortio-client
-  name: fortio-client
+    app:   fortio-server-defaults
+  name:   fortio-server-defaults
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: fortio-client
+      app:   fortio-server-defaults
   template:
     metadata:
-      namespace: fortio-consul-100
+      namespace: fortio-consul-default
       annotations:
         'consul.hashicorp.com/connect-inject': 'true'
         'consul.hashicorp.com/transparent-proxy': 'true'
-        'consul.hashicorp.com/sidecar-proxy-cpu-limit': '500m' # 35% of a CPU
-        'consul.hashicorp.com/sidecar-proxy-cpu-request': '200m'
+        'consul.hashicorp.com/consul-envoy-proxy-concurrency': '2'
+        'consul.hashicorp.com/sidecar-proxy-cpu-limit': '100m' # 35% of a CPU
+        'consul.hashicorp.com/sidecar-proxy-cpu-request': '100m'
         'consul.hashicorp.com/sidecar-proxy-memory-limit': '100Mi'
         'consul.hashicorp.com/sidecar-proxy-memory-request': '100Mi'
       labels:
-        app: fortio-client
+        app:   fortio-server-defaults
     spec:
       containers:
-      - name: fortio
+      - name:   fortio-server-defaults
         image: fortio/fortio:latest_release
         env:       
         ports:
@@ -50,13 +55,6 @@ spec:
           name: http-fortio
         - containerPort: 8079
           name: grpc-ping        
-        volumeMounts:
-        - name: reports
-          mountPath: /var/lib/fortio
-      volumes:
-      - name: reports
-        emptyDir:
-            medium: Memory
-      serviceAccountName: fortio-client
+      serviceAccountName:   fortio-server-defaults
       nodeSelector:
         nodegroup: services

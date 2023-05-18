@@ -35,8 +35,9 @@ spec:
       annotations:
         'consul.hashicorp.com/connect-inject': 'true'
         'consul.hashicorp.com/transparent-proxy': 'true'
-        'consul.hashicorp.com/sidecar-proxy-cpu-limit': '150m' # 35% of a CPU
-        'consul.hashicorp.com/sidecar-proxy-cpu-request': '150m'
+        'consul.hashicorp.com/consul-envoy-proxy-concurrency': '4'
+        'consul.hashicorp.com/sidecar-proxy-cpu-limit': '500m' # 50% of a vCPU
+        'consul.hashicorp.com/sidecar-proxy-cpu-request': '500m'
         'consul.hashicorp.com/sidecar-proxy-memory-limit': '100Mi'
         'consul.hashicorp.com/sidecar-proxy-memory-request': '100Mi'
       labels:

@@ -2,13 +2,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name:   fortio-server-defaults-grpc
-  namespace: fortio-consul-100
+  namespace: fortio-consul-default
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name:   fortio-server-defaults-grpc
-  namespace: fortio-consul-100
+  namespace: fortio-consul-default
 spec:
   selector:
     app:   fortio-server-defaults-grpc
@@ -19,7 +19,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: fortio-consul-100
+  namespace: fortio-consul-default
   labels:
     app:   fortio-server-defaults-grpc
   name:   fortio-server-defaults-grpc
@@ -30,7 +30,7 @@ spec:
       app:   fortio-server-defaults-grpc
   template:
     metadata:
-      namespace: fortio-consul-100
+      namespace: fortio-consul-default
       annotations:
         'consul.hashicorp.com/connect-inject': 'true'
         'consul.hashicorp.com/transparent-proxy': 'true'

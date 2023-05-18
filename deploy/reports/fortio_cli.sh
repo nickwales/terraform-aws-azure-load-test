@@ -1,7 +1,7 @@
 #!/bin/bash
 SCRIPT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 RESULTS=/tmp/fortio.results.csv
-DURATION=10
+DURATION=2
 RECOVERY_TIME=30
 PAYLOAD=""
 JSON=""
@@ -9,17 +9,18 @@ QPS=1000
 CONNECTIONS=(2 4 8 16 32 64)
 
 baseline_http() {
-    Label="Baseline-HTTP"
     if [[ -z $NAMESPACE ]]; then
         NAMESPACE="fortio-baseline"
+        Label="Baseline-HTTP"
+    else
+        Label="HTTP-${NAMESPACE}"
     fi
     for c in "${CONNECTIONS[@]}"
     do
         DATE=$(date '+%m%d%Y-%H%M%S')
         REPORT="/tmp/$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_${c}c_${DATE}.json"
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
-        command="kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps ${QPS} -c ${c} -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo"
-        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps ${QPS} -c ${c} -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > "${REPORT}"
+        kubectl -n $NAMESPACE exec -i deploy/fortio-client -c fortio -- fortio load -qps ${QPS} -c ${c} -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > "${REPORT}"
         sleep $RECOVERY_TIME
         report $REPORT $DATE ${NAMESPACE}
     done
@@ -30,19 +31,20 @@ baseline_http() {
     echo "http://localhost:8080/fortio"
 }
 baseline_grpc() {
-    Label="Baseline-GRPC"
     if [[ -z $NAMESPACE ]]; then
         NAMESPACE="fortio-baseline"
+        Label="Baseline-GRPC"
+    else
+        Label="GRPC-${NAMESPACE}"
     fi
     for c in "${CONNECTIONS[@]}"
     do
         DATE=$(date '+%m%d%Y-%H%M%S')
         REPORT="/tmp/$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_${c}c_${DATE}.json"
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
-        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -grpc -ping -qps 1000 -c $c -s 1 -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} fortio-server-defaults:8079 > "${REPORT}"
+        kubectl -n $NAMESPACE exec -i deploy/fortio-client -c fortio -- fortio load -grpc -ping -qps 1000 -c $c -s 1 -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" ${JSON} fortio-server-defaults:8079 > "${REPORT}"
         sleep $RECOVERY_TIME
         report $REPORT $DATE ${NAMESPACE}
-        
     done
     echo
     echo "To See Load Test results port-forward fortio client and click on Browse 'saved results'"
@@ -51,19 +53,22 @@ baseline_grpc() {
     echo "http://localhost:8080/fortio"
 }
 consul_http() {
-    Label="Consul-HTTP"
     if [[ -z $NAMESPACE ]]; then
-        NAMESPACE="fortio-consul-100"
+        NAMESPACE="fortio-consul-default"
+        Label="Consul-HTTP"
+    else
+        Label="HTTP-${NAMESPACE}"
     fi
     for c in "${CONNECTIONS[@]}"
     do
         DATE=$(date '+%m%d%Y-%H%M%S')
         REPORT="/tmp/$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_${c}c_${DATE}.json"
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
-        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -qps 1000 -c $c -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" ${HEADERS} -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > "${REPORT}"
+        kubectl -n $NAMESPACE exec -i deploy/fortio-client -c fortio -- fortio load -qps 1000 -c $c -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" ${HEADERS} -a -labels "${Label}" ${JSON} http://fortio-server-defaults:8080/echo > "${REPORT}"
+        PID=$!
+        wait $PID
         sleep $RECOVERY_TIME
         report $REPORT $DATE ${NAMESPACE}
-        
     done
     echo
     echo "To See Load Test results port-forward fortio client and click on Browse 'saved results'"
@@ -72,19 +77,20 @@ consul_http() {
     echo "http://localhost:8080/fortio"
 }
 consul_grpc() {
-    Label="Consul-GRPC"
     if [[ -z $NAMESPACE ]]; then
-        NAMESPACE="fortio-consul-100"
+        NAMESPACE="fortio-consul-default"
+        Label="Consul-GRPC"
+    else
+        Label="GRPC-${NAMESPACE}"
     fi
     for c in "${CONNECTIONS[@]}"
     do
         DATE=$(date '+%m%d%Y-%H%M%S')
         REPORT="/tmp/$(echo ${Label}|sed s"/ /_/g")_${NAMESPACE}_${c}c_${DATE}.json"
         echo "Running ${Label} for ${DURATION}s with $c connections in K8s ns $NAMESPACE"
-        kubectl -n $NAMESPACE exec -it deploy/fortio-client -c fortio -- fortio load -grpc -ping -qps 1000 -c $c -s 1 -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" -json - fortio-server-defaults-grpc:8079 > "${REPORT}"
+        kubectl -n $NAMESPACE exec -i deploy/fortio-client -c fortio -- fortio load -grpc -ping -qps 1000 -c $c -s 1 -r .0001 -t ${DURATION}s -payload "${PAYLOAD}" -a -labels "${Label}" -json - fortio-server-defaults-grpc:8079 > "${REPORT}"
         sleep $RECOVERY_TIME
         report $REPORT $DATE ${NAMESPACE}
-        
     done
     echo
     echo "To See Load Test results port-forward fortio client and click on Browse 'saved results'"
@@ -92,14 +98,40 @@ consul_grpc() {
     echo
     echo "http://localhost:8080/fortio"
 }
-get_cpu_used(){
+
+get_cpu_throttled(){
     # Call Prometheus API to capture container_cpu_usage_seconds_total for the consul-dataplane container.
     NS="${1}"
-    metric=$(kubectl -n consul exec -it consul-server-0 -- sh -c "export starttime=\$(date +'%Y-%m-%dT%H:%M:%SZ' -d@\"\$(( `date +%s`-${DURATION}))\") &&
+    if [[ ${NS} =~ .*baseline.* ]]; then
+        CONTAINER="fortio"
+    else
+        CONTAINER="consul-dataplane"
+    fi
+    metric=$(kubectl -n consul exec -i consul-server-0 -- sh -c "export starttime=\$(date +'%Y-%m-%dT%H:%M:%SZ' -d@\"\$(( `date +%s`-${DURATION}))\") &&
     export endtime=\$(date +'%Y-%m-%dT%H:%M:%SZ') &&
     curl -s prometheus-server.metrics/api/v1/query_range \
     --header 'Content-Type: application/x-www-form-urlencoded'  \
-    --data-urlencode 'query=sum(rate(container_cpu_usage_seconds_total{namespace=\"$NS\", pod=~\"fortio-client.*\",container=\"consul-dataplane\"}[5m]))' \
+    --data-urlencode 'query=sum(rate(container_cpu_cfs_throttled_seconds_total{namespace=\"$NS\", pod=~\"fortio.*\",container=\"$CONTAINER\"}[5m]))' \
+    --data-urlencode start=\$starttime \
+    --data-urlencode end=\$endtime  \
+    --data-urlencode step=30s")
+    # Prometheus output generates ^M character which is hard to remove.  Needed to use the escape code '\015'
+    #echo "${metric}" | tr -d '\015'
+    echo "${metric}" | tr -d '\015'
+}
+get_cpu_used(){
+    # Call Prometheus API to capture container_cpu_usage_seconds_total for the consul-dataplane container.
+    NS="${1}"
+    if [[ ${NS} =~ .*baseline.* ]]; then
+        CONTAINER="fortio"
+    else
+        CONTAINER="consul-dataplane"
+    fi
+    metric=$(kubectl -n consul exec -i consul-server-0 -- sh -c "export starttime=\$(date +'%Y-%m-%dT%H:%M:%SZ' -d@\"\$(( `date +%s`-${DURATION}))\") &&
+    export endtime=\$(date +'%Y-%m-%dT%H:%M:%SZ') &&
+    curl -s prometheus-server.metrics/api/v1/query_range \
+    --header 'Content-Type: application/x-www-form-urlencoded'  \
+    --data-urlencode 'query=sum(rate(container_cpu_usage_seconds_total{namespace=\"$NS\", pod=~\"fortio-client.*\",container=\"$CONTAINER\"}[5m]))' \
     --data-urlencode start=\$starttime \
     --data-urlencode end=\$endtime  \
     --data-urlencode step=30s")
@@ -110,11 +142,16 @@ get_cpu_used(){
 get_mem_used(){
     # Call Prometheus API to capture container_memory_working_set_bytes for the consul-dataplane container.
     NS="${1}"
-    metric=$(kubectl -n consul exec -it consul-server-0 -- sh -c "export starttime=\$(date +'%Y-%m-%dT%H:%M:%SZ' -d@\"\$(( `date +%s`-${DURATION}))\") &&
+    if [[ ${NS} =~ .*baseline.* ]]; then
+        CONTAINER="fortio"
+    else
+        CONTAINER="consul-dataplane"
+    fi
+    metric=$(kubectl -n consul exec -i consul-server-0 -- sh -c "export starttime=\$(date +'%Y-%m-%dT%H:%M:%SZ' -d@\"\$(( `date +%s`-${DURATION}))\") &&
     export endtime=\$(date +'%Y-%m-%dT%H:%M:%SZ') &&
     curl -s prometheus-server.metrics/api/v1/query \
     --header 'Content-Type: application/x-www-form-urlencoded'  \
-    --data-urlencode 'query=sum(container_memory_working_set_bytes{namespace=\"$NS\", pod=~\"fortio-client.*\",container=\"consul-dataplane\"})' \
+    --data-urlencode 'query=sum(container_memory_working_set_bytes{namespace=\"$NS\", pod=~\"fortio-client.*\",container=\"$CONTAINER\"})' \
     --data-urlencode start=\$starttime")
     # Prometheus output generates ^M character which is hard to remove.  Needed to use the escape code '\015'
     echo "${metric}" | tr -d '\015'
@@ -139,11 +176,14 @@ report () {
         Destination=$(echo $TMP_JSON |  jq -r '.Destination')
         URL=$(echo $TMP_JSON |  jq -r '.URL')
         Streams=$(echo $TMP_JSON |  jq -r '.Streams')
-        #Prometheus metrics.  
+        # Get Prometheus metrics.
+        echo "Getting Prometheus Metrics"
         cpu_metric=$(echo "$(get_cpu_used ${NS})")
+        cpu_throttled_metric=$(echo "$(get_cpu_throttled ${NS})")
         mem_metric=$(echo "$(get_mem_used ${NS})")
-        # CPU usage is taken every 30s and this returns the last slice.
+        # CPU usage is taken every 30s and this returns the value of the last 30s slice.
         cpu_last=$(echo $cpu_metric | jq -r '.data.result[].values[-1][1]')
+        cpu_throttled=$(echo $cpu_throttled_metric | jq -r '.data.result[].values[-1][1]')
         mem_last=$(echo $mem_metric | jq -r '.data.result[].value[1]')
         # *1000|bc converts output to milliseconds
         p50=$(echo $TMP_JSON |  jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==50) | .Value'*1000|bc)
@@ -152,15 +192,19 @@ report () {
         p99=$(echo $TMP_JSON | jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==99) | .Value'*1000|bc)
         p999=$(echo $TMP_JSON| jq -r '.DurationHistogram.Percentiles[] | select(.Percentile==99.9) | .Value'*1000|bc)
 
+        echo "Writing Results..."
         if [[ ! -f $RESULTS ]]; then
-            echo "Date,Name,Type,Namespace,Duration,QPS,CPU,Mem,Connections,P50_${Labels},P75_${Labels},P90_${Labels},P99_${Labels},P99.9_${Labels},Errors,Streams,Destination" > $RESULTS
+            echo "Date,Name,Type,${NS},Duration,QPS,CPU_Throttled,CPU,Mem,Connections,P50_${Labels},P75_${Labels},P90_${Labels},P99_${Labels},P99.9_${Labels},Errors,Streams,Destination" > $RESULTS
+        elif [[ ! $(cat $RESULTS | grep "${Labels}") ]]; then
+            echo "Date,Name,Type,${NS},Duration,QPS,CPU_Throttled,CPU,Mem,Connections,P50_${Labels},P75_${Labels},P90_${Labels},P99_${Labels},P99.9_${Labels},Errors,Streams,Destination" >> $RESULTS
         fi
         if [[ $Destination == "null" ]]; then
             Destination=$URL
         fi
-        echo "$DATE,$Labels,$RunType,$NAMESPACE,$RequestedDuration,$RequestedQPS,${cpu_last},${mem_last},$NumThreads,${p50},${p75},${p90},${p99},${p999},$Errors,$Streams,$Destination" >> $RESULTS
-        echo "Metric Data - Memory: $(get_mem_used ${NS})"
-        echo "Metric Data - CPU: $(get_cpu_used ${NS})"
+        echo "$DATE,$Labels,$RunType,$NAMESPACE,$RequestedDuration,$RequestedQPS,${cpu_throttled},${cpu_last},${mem_last},$NumThreads,${p50},${p75},${p90},${p99},${p999},$Errors,$Streams,$Destination" >> $RESULTS
+        echo "Metric Data - Memory: $mem_metric"
+        echo "Metric Data - CPU: $cpu_metric"
+        echo "Metric Data - CPU Throttled: $cpu_throttled_metric"
         echo "${Labels} Report: wrote csv output to file: $RESULTS"
     fi
 }

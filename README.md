@@ -1,86 +1,60 @@
-### Configure Kube Config File
+# terraform-aws-azure-load-test
+
+## Deploy the monitoring stack with Helm
+Current Monitoring Stack:
+* prometheus
+* prometheus-consul-exporter
+* grafana
 
 ```
-./update_kube_config.sh
+cd deploy
+./deploy_helm.sh
 ```
 
+## Deploy Fortio
+There are multiple test cases contained within the `fortio-tests` directory.
 
-### Deploy Consul
-
-We need an older version for pre-dataplane.
+Deploy a single test use case
 ```
-export VERSION=0.49.4
-helm install consul hashicorp/consul --set global.name=consul --version ${VERSION} --create-namespace --namespace consul --values deploy/helm/values_sidecar.yaml
-```
-
-Latest version looks like this:
-```
-helm install consul hashicorp/consul --set global.name=consul --create-namespace --namespace consul --values deploy/helm/values_dataplane.yaml
+cd fortio-tests
+deploy.sh
 ```
 
-### Deploy Prometheus
+Undeploy the test use case by providing any value as a parameter (ex: delete)
 ```
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm install -f deploy/helm/prometheus-values.yaml prometheus prometheus-community/prometheus --version "15.5.3" --wait
-helm install prometheus-consul-exporter prometheus-community/prometheus-consul-exporter
-
-helm repo add grafana https://grafana.github.io/helm-charts
-helm install -f deploy/helm/grafana-values.yaml grafana grafana/grafana --wait
- ```
-
-### Connect to prometheus
-```
-kubectl port-forward service/grafana 3000:3000
-open http://localhost:8081
+cd <fortio-baseline>
+deploy_all.sh delete
 ```
 
-### Configure default deny intention
+### Fortio CLI
 
+Reports
 ```
-kubectl apply -f deploy/config/crd/intentions/default-deny.yaml
-```
-
-
-### Deploy Fortio
-
-We're deploying a fortio client and a selection of servers with different resource characteristics.
-```
-kubectl apply -f deploy/apps/fortio-client.yaml
-kubectl apply -f deploy/apps/fortio-server-defaults.yaml
-kubectl apply -f deploy/apps/fortio-server-small.yaml
-kubectl apply -f deploy/apps/fortio-server-medium.yaml
-kubectl apply -f deploy/apps/fortio-server-large.yaml
-
-# Open fortio to the ingress controller (optional)
-kubectl apply -f deply/config/crd/ingress-controller/ingress-controller.yaml
-
-# Alternatively port forward to fortio
-kubectl port-forward service/fortio-client 8080:8080
-open http://localhost:8080
+fortio report -data-dir ./reports/
 ```
 
-### Configure Fortio
+GRPC
+```
+kubectl exec -it deploy/fortio-client -- fortio load -a -grpc -ping -grpc-ping-delay 0.25s -payload "01234567890" -c 2 -s 4 -json - fortio-server-defaults-grpc:8079
 
-Use this base URL
+kubectl exec -it deploy/fortio-client -- fortio load -grpc -ping -qps 100 -c 10 -r .0001 -t 3s -labels "grpc test" fortio-server-defaults-grpc:8079
 
-http://fortio-server-<size>.default.svc.cluster.local:8080/echo
+# -s multiple streams per -c connection.  .25s delay in replies using payload of 10bytes
+kubectl exec -it deploy/fortio-client -- fortio load -a -grpc -ping -grpc-ping-delay 0.25s -payload "01234567890" -c 2 -s 4 fortio-server-defaults-grpc:8079
+```
 
+HTTP
+* `-json -` write json output to stdout
+```
+kubectl -n fortio-baseline exec -it deploy/fortio-client -- fortio load -qps 1000 -c 32 -r .0001 -t 300s -labels "http test" -json - http://fortio-server-defaults:8080/echo
+```
 
-### Available options:
+TCP
+```
+fortio load -qps -1 -n 100000 tcp://localhost:8078
+```
 
-See https://github.com/fortio/fortio#server-urls-and-features
-
-## Example
-
-Delay 10% of responses by 150 microseconds, 5% by 2 milliseconds
-Respond to 10% of requests wiht a 1k payload and 5% with a 512 byte response.
-
-The remaining 85% of queries will get an echo of whatever was sent back.
-
- `http://fortio-server.default.svc.cluster.local:8080/echo?delay=150us:10,2ms:5,0.5s:1&size=1024:10,512:5`
-
-
-
-
-
+UDP
+```
+fortio load -qps -1 -n 100000 udp://localhost:8078/
+```
